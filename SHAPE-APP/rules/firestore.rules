@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Covered by unit tests
+    //
+    match /errors/{document=**} {
+     allow create :if signedIn();
+     allow delete: if false;
+    }
+    match /questionnaire/{questionnaireId}{
+      allow read, get, list: if (request.auth.token.preview == true && request.auth.token.org == resource.data.org)
+      allow read, get, list: if (request.auth.token.participantId in resource.data.participants && request.auth.token.org == resource.data.org) || isAdmin()
+      allow create, update, delete: if isAdmin();
+    }
+    match /survey/{surveyId}{
+      allow read, get, list: if (request.auth.token.participantId in resource.data.participants && request.auth.token.org == resource.data.org) || isAdmin()
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+    match /informed-consent/{consentId}{
+      allow create: if signedIn()
+      allow read, get, list: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org)
+      allow delete, get: if false;
+    }
+    match /participant/{participantId}{
+      allow read, get, list, update: if resource.data.public || participantId == incomingData().participantId || isAdmin()
+			allow read, get, list: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org)|| isAdmin()
+			allow create, update: if isAdmin()
+      allow delete: if false;
+    }
+    match /participant-diary/{participantId}{
+      allow create: if signedIn()
+      allow update: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org)
+      allow read, get, list: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org) || isAdmin()
+      allow delete : if false;
+    }
+    match /participant-response/{participantId}{
+    	allow create: if signedIn()
+      allow update: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org)
+      allow read, get, list: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org) || isAdmin()
+      allow delete : if false;
+    }
+    match /question/{questionId}{
+      allow read, create, update, get, list: if isAdmin()
+      allow delete: if isAdmin();
+    }
+    match /users/{userId}{
+      allow create: if true;
+      allow update, read, get, list: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org) || isAdmin()
+      allow delete : if false;
+    }
+    match /message/{messageId}{
+      allow read, create, get, list: if isAdmin()
+      allow delete, update: if false;
+    }
+    match /inbox/{participantId}{
+      allow update, read, get, list, delete: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org)
+      allow create, update, read, get, list, delete: if isAdmin()
+    }
+    match /ehr/{participantId}{
+      allow create: if signedIn()
+      allow update, read, get, list: if (request.auth.token.participantId == resource.data.participantId && request.auth.token.org == resource.data.org)
+      allow create, update, read, get, list: if isAdmin()
+      allow delete: if false;
+    }
+    match /org/{orgId}{
+      allow create, update, read, get, list, delete: if isAdmin()
+      allow read: if true;
+    }
+  }
+}
+
+function incomingData() {
+  return request.resource.data;
+}
+
+function isAdmin(){
+	return request.auth != null && request.auth.token.admin == true && (request.auth.token.org == resource.data.org || request.auth.token.org == "ALL")
+}
+
+function signedIn() {
+	return request.auth.uid != null;
+}

@@ -1,0 +1,138 @@
+/* Ionic Variables and Theming. For more info, please see:
+http://ionicframework.com/docs/theming/ */
+
+/** Ionic CSS Variables **/
+:root {
+    /** primary **/
+    /**--ion-color-primary: #3880ff;**/
+    --ion-color-primary: #007cba;
+    --ion-color-primary-rgb: 0, 124, 186;
+    --ion-color-primary-contrast: #ffffff;
+    --ion-color-primary-contrast-rgb: 255, 255, 255;
+    /**--ion-color-primary-shade: #3171e0;**/
+    --ion-color-primary-shade: #006da4;
+    /**--ion-color-primary-tint: #4c8dff;**/
+    --ion-color-primary-tint: #1a89c1;
+    --ion-font-family: 'Comfortaa';
+
+    /** secondary **/
+    /**--ion-color-secondary: #0cd1e8;**/
+    --ion-color-secondary: #f6987a;
+    --ion-color-secondary-rgb: 246, 152, 122;
+    --ion-color-secondary-contrast: #ffffff;
+    --ion-color-secondary-contrast-rgb: 255, 255, 255;
+    --ion-color-secondary-shade: #d8866b;
+    /**--ion-color-secondary-shade: #0bb8cc;**/
+    --ion-color-secondary-tint: #f7a287;
+    /**--ion-color-secondary-tint: #24d6ea;**/
+
+    /** tertiary **/
+    --ion-color-tertiary: #213452;
+    --ion-color-tertiary-rgb: 33, 52, 82;
+    --ion-color-tertiary-contrast: #ffffff;
+    --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+    --ion-color-tertiary-shade: #1d2e48;
+    --ion-color-tertiary-tint: #374863;
+
+    /** success **/
+    /**--ion-color-success: #10dc60;**/
+    --ion-color-success: #66b584;
+    --ion-color-success-rgb: 16, 220, 96;
+    --ion-color-success-contrast: #ffffff;
+    --ion-color-success-contrast-rgb: 255, 255, 255;
+    --ion-color-success-shade: rgba(50, 90, 100, 1);
+    /**--ion-color-success-shade: #0ec254;**/
+    --ion-color-success-tint: rgba(50, 90, 100, 1);
+    /**--ion-color-success-tint: #28e070;**/
+
+    /** warning **/
+    --ion-color-warning: #ffce00;
+    --ion-color-warning-rgb: 255, 206, 0;
+    --ion-color-warning-contrast: #ffffff;
+    --ion-color-warning-contrast-rgb: 255, 255, 255;
+    --ion-color-warning-shade: #e0b500;
+    --ion-color-warning-tint: #ffd31a;
+
+    /** danger **/
+    --ion-color-danger: #f04141;
+    --ion-color-danger-rgb: 245, 61, 61;
+    --ion-color-danger-contrast: #ffffff;
+    --ion-color-danger-contrast-rgb: 255, 255, 255;
+    --ion-color-danger-shade: #d33939;
+    --ion-color-danger-tint: #f25454;
+
+    /** dark **/
+    --ion-color-dark: #222428;
+    --ion-color-dark-rgb: 34, 34, 34;
+    --ion-color-dark-contrast: #ffffff;
+    --ion-color-dark-contrast-rgb: 255, 255, 255;
+    --ion-color-dark-shade: #1e2023;
+    --ion-color-dark-tint: #383a3e;
+
+    /** medium **/
+    --ion-color-medium: #989aa2;
+    --ion-color-medium-rgb: 152, 154, 162;
+    --ion-color-medium-contrast: #ffffff;
+    --ion-color-medium-contrast-rgb: 255, 255, 255;
+    --ion-color-medium-shade: #86888f;
+    --ion-color-medium-tint: #a2a4ab;
+
+    /** light **/
+    --ion-color-light: #f4f5f8;
+    --ion-color-light-rgb: 244, 244, 244;
+    --ion-color-light-contrast: #000000;
+    --ion-color-light-contrast-rgb: 0, 0, 0;
+    --ion-color-light-shade: #d7d8da;
+    --ion-color-light-tint: #f5f6f9;
+}
+
+/** scroll bars for alerts **/
+.alert-wrapper {
+    min-width: 30% !important;
+}
+.alert-checkbox-group::-webkit-scrollbar {
+    width: 1em;
+    display: block !important;
+}
+.alert-checkbox-group::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+.alert-checkbox-group::-webkit-scrollbar-thumb {
+    background-color: #428cff;
+    outline: 1px solid #428cff;
+}
+.alert-checkbox-label {
+    white-space: normal;
+    padding-left: 2em !important;
+}
+
+.alert-radio-group::-webkit-scrollbar {
+    width: 1em;
+    display: block !important;
+}
+
+.alert-radio-group::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3);
+}
+.alert-radio-label.sc-ion-alert-md {
+    padding-left: 2em !important;
+    white-space: normal !important;
+}
+
+.alert-radio-group::-webkit-scrollbar-thumb {
+    background-color: #428cff;
+    outline: 1px solid #428cff;
+}
+
+/* Fonts */
+@font-face {
+    font-family: 'Comfortaa';
+    src: url('/assets/fonts/comfortaa.woff') format('woff'),
+        url('/assets/fonts/Comfortaa-Regular.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'OpenSans';
+    src: url('/assets/fonts/opensans.woff2');
+}

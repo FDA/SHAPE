@@ -1,0 +1,185 @@
+/* NewEntry.tsx */
+.diary-card {
+  height: 8em;
+  margin: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* NewEntry.tsx */
+.disabled-card {
+  height: 8em;
+  margin: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #808289;
+  font-weight: 900;
+  background-color: #d7d8da;
+}
+
+.headerGrid {
+  border-top: 2px solid #a9a9a9;
+  --ion-grid-padding: 0px;
+  margin-bottom: -1em;
+}
+
+.align-text-middle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.instruction-card {
+  margin: 0px;
+  height: 2em;
+  background-color: #f2f2f7;
+  display: flex;
+  font-size: 1em;
+  align-items: center;
+  justify-content: left;
+  box-shadow: none !important;
+  padding-left: 10px;
+}
+
+.round-button {
+  -moz-border-radius: 60px;
+  -webkit-border-radius: 60px;
+  border-radius: 3px;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  padding-left: 0.2em;
+  margin-left: 0px;
+}
+
+/* DiaryList.tsx */
+.diary-list-item {
+  width: 97vw;
+}
+
+.diary-page {
+  width: 100%;
+}
+
+/* DiaryList.tsx */
+.opened-list-item {
+  --inner-border-width: 0 0 0 0 !important;
+}
+
+.opened-list-item-body {
+  transition: height 2s;
+}
+
+.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 2s linear;
+}
+.hidden {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s 2s, opacity 2s linear;
+}
+
+/* EventForm.tsx */
+.form-col {
+  padding: 0px;
+}
+
+.form-row {
+  padding-bottom: 0px;
+  padding-top: 0px;
+  margin-bottom: -10px;
+  margin-top: -1px;
+}
+
+/* ERVisit.tsx */
+.adverse-event-row {
+  padding-bottom: 0px;
+  padding-top: 0px;
+  margin-bottom: 0px;
+  margin-top: -1px;
+  border: 0px;
+}
+
+.inline-checkboxes {
+  height: 3.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* EventForm.tsx */
+.min-sec-col {
+  padding: 0px 0.5em 0px 0px;
+}
+
+/* EventForm.tsx */
+.form-item {
+  --inner-border-width: 0 0 0 0 !important;
+}
+
+/* EventForm.tsx */
+.rounded-input {
+  border: 1px solid #a9a9a9;
+  -moz-border-radius: 50px;
+  -webkit-border-radius: 50px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  padding-left: 0.2em;
+  margin-left: 0px;
+}
+/* For resizing radio button choice sizes */
+.alert-tappable.alert-radio {
+  height: auto;
+  contain: content;
+}
+
+.alert-radio-label.sc-ion-alert-md,
+.alert-radio-label.sc-ion-alert-ios {
+  white-space: normal;
+}
+/* EventForm.tsx */
+.small-ion-item {
+  height: 3.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.small-label {
+  color: red;
+}
+
+/* EventForm.tsx */
+.small-ion-bar {
+  height: 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* EventForm.tsx */
+.selected {
+  margin-top: 1vh;
+  border: 1px solid #a9a9a9;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  background-color: white;
+  min-height: 4.5vh;
+  height: 4.5vh;
+  color: black !important;
+}
+
+.form-textbox {
+  border: 1px solid #a9a9a9;
+  padding-left: 1em;
+}

@@ -1,0 +1,28 @@
+{
+  "short_name": "SHAPE",
+  "name": "Survey of Health and Patient Experience (SHAPE)",
+  "icons": [
+    {
+      "src": "assets/icon/favicon.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/assets/icon/logo300.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icon/maskable_icon.png",
+      "sizes": "196x196",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#3880ff",
+  "background_color": "#ffffff"
+}
