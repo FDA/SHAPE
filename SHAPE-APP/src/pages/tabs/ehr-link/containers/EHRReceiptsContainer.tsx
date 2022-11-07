@@ -1,40 +1,40 @@
-import React, { Component } from "react";
-import { connect } from "react-redux";
-import { FirebaseAuth, EHRReceipt } from "../../../../interfaces/DataTypes";
-import EHRReceipts from "../EHRReceipts";
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { FirebaseAuth, EHRReceipt, Survey } from '../../../../interfaces/DataTypes';
+import EHRReceipts from '../EHRReceipts';
 
 interface ParentReceipt {
-  ehrReceipts: Array<EHRReceipt>;
+    ehrReceipts: Array<EHRReceipt>;
 }
 
 interface PassedProps {
-  fireBaseAuth: FirebaseAuth;
-  isLoading: boolean;
-  receipt: ParentReceipt;
+    fireBaseAuth: FirebaseAuth;
+    isLoading: boolean;
+    receipt: ParentReceipt;
+    surveys: Array<Survey>;
 }
 
 class EHRReceiptsContainer extends Component<PassedProps, {}> {
-  render() {
-    let { fireBaseAuth, isLoading, receipt } = this.props;
-    return (
-      <EHRReceipts
-        fireBaseAuth={fireBaseAuth}
-        isLoading={isLoading}
-        receipt={receipt}
-      />
-    );
-  }
+    render() {
+        const { fireBaseAuth, isLoading, receipt, surveys } = this.props;
+        return (
+            <EHRReceipts
+                fireBaseAuth={fireBaseAuth}
+                isLoading={isLoading}
+                receipt={receipt}
+                surveys={surveys}
+            />
+        );
+    }
 }
 
 const mapStateToProps = (state: any) => ({
-  fireBaseAuth: state.firebase.auth,
-  isLoading: state.loading,
-  receipt: state.receipt,
+    fireBaseAuth: state.firebase.auth,
+    isLoading: state.loading,
+    receipt: state.receipt,
+    surveys: state.surveys
 });
 
-const mapDispatchToProps = (dispatch: any) => ({});
+const mapDispatchToProps = (/* dispatch: any */) => ({});
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(EHRReceiptsContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(EHRReceiptsContainer);

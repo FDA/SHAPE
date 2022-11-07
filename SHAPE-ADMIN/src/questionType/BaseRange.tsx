@@ -4,8 +4,8 @@ import {IonInput, IonItem, IonLabel, IonList} from '@ionic/react';
 interface Props {
     handleMinChange: Function;
     handleMaxChange: Function;
-    min: number;
-    max: number;
+    min: string;
+    max: string;
 }
 
 class BaseRange extends Component<Props> {

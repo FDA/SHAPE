@@ -1,22 +1,19 @@
 import { RequiredValidationEvaluator, RangeValidator } from "../components";
-import { Context } from "../engine/Context";
 import { QuestionnaireQuestion } from "../../interfaces/DataTypes";
 import { questionTypes } from "../../utils/Constants";
 
 export default class ValidationFactory {
   validate(
     question: QuestionnaireQuestion,
-    currentValue: string,
-    context: Context | undefined
+    currentValue: string
   ): boolean {
-    let retVal = true;
+    const retVal = true;
 
     if (question.hasOwnProperty("required")) {
       const validationEvaluator = new RequiredValidationEvaluator();
       const result = validationEvaluator.evaluate(
         question,
-        currentValue,
-        context
+        currentValue
       );
       if (typeof result === "boolean") {
         if (!result) {
@@ -25,12 +22,12 @@ export default class ValidationFactory {
       }
     }
 
+    //Question is not required
     if (question.type === questionTypes.RANGE) {
       const validationEvaluator = new RangeValidator();
       const result = validationEvaluator.evaluate(
         question,
-        currentValue,
-        context
+        currentValue
       );
       if (typeof result === "boolean") {
         if (!result) {

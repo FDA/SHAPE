@@ -55,7 +55,7 @@ class OnComplete extends Component<PassedProps, OnCompleteState> {
     if (redirectToHome) {
       return <Redirect to={routes.TABS} />;
     }
-    let { ehr } = this.props ? this.props : { ehr: {} };
+    const { ehr } = this.props ? this.props : { ehr: {} };
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     const success = urlParams.get("success") === "true";

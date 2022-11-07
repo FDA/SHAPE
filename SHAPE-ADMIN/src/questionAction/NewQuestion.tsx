@@ -10,8 +10,8 @@ import {
     IonToolbar
 } from '@ionic/react';
 import React from 'react';
-import {questionTypes, routes} from '../utils/Constants';
-import {RouteComponentProps, withRouter} from 'react-router-dom';
+import { questionTypes, routes } from '../utils/Constants';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import SingleText from '../questionType/SingleText';
 import RadioGroup from '../questionType/RadioGroup';
 import DateTime from '../questionType/DateTime';
@@ -21,7 +21,7 @@ import Slider from '../questionType/Slider';
 import TextArea from '../questionType/TextArea';
 import Range from '../questionType/Range';
 import InfoCard from '../questionType/InfoCard';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
 import {
     analyticsOutline,
     arrowDownOutline,
@@ -53,7 +53,7 @@ class NewQuestion extends React.Component<ReduxProps, State> {
     }
 
     componentDidMount() {
-        const {loggedIn} = this.props;
+        const { loggedIn } = this.props;
 
         if (!loggedIn) {
             this.props.history.push(routes.LOGIN);
@@ -61,7 +61,7 @@ class NewQuestion extends React.Component<ReduxProps, State> {
     }
 
     handleMenuChange(menuItem: string) {
-        this.setState({view: menuItem});
+        this.setState({ view: menuItem });
     }
 
     calculateColor(type: string) {
@@ -69,158 +69,107 @@ class NewQuestion extends React.Component<ReduxProps, State> {
     }
 
     render() {
-        let {view} = this.state;
+        let { view } = this.state;
 
         return (
             <>
-                <IonHeader>
+                <IonHeader aria-label='Create New'>
                     <IonToolbar>
                         <IonTitle>Create New</IonTitle>
                     </IonToolbar>
                 </IonHeader>
                 <IonGrid>
                     <IonRow>
-                        <IonCol size="sm">
+                        <IonCol size='sm'>
                             <IonList>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.SINGLETEXT
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.SINGLETEXT
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.SINGLETEXT)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.SINGLETEXT)}>
                                     Single Line Text &nbsp;
                                     <IonIcon icon={textOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.RADIOGROUP
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.RADIOGROUP
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.RADIOGROUP)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.RADIOGROUP)}>
                                     Radio Group &nbsp;
                                     <IonIcon icon={radioButtonOnOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.DATETIME
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.DATETIME
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.DATETIME)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.DATETIME)}>
                                     Date Time &nbsp;
                                     <IonIcon icon={calendarSharp} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.CHECKBOXGROUP
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.CHECKBOXGROUP
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.CHECKBOXGROUP)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.CHECKBOXGROUP)}>
                                     Checkbox &nbsp;
                                     <IonIcon icon={checkboxOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.SELECT
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.SELECT
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.SELECT)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.SELECT)}>
                                     Select &nbsp;
                                     <IonIcon icon={arrowDownOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.SLIDER
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.SLIDER
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.SLIDER)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.SLIDER)}>
                                     Slider &nbsp;
                                     <IonIcon icon={optionsOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.TEXTAREA
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.TEXTAREA
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.TEXTAREA)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.TEXTAREA)}>
                                     Text Area &nbsp;
                                     <IonIcon icon={documentTextOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.RANGE
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.RANGE
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.RANGE)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.RANGE)}>
                                     Range &nbsp;
                                     <IonIcon icon={analyticsOutline} />
                                 </IonItem>
                                 <IonItem
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() =>
-                                        this.handleMenuChange(
-                                            questionTypes.INFO
-                                        )
-                                    }
-                                    lines="none"
-                                    color={this.calculateColor(
-                                        questionTypes.INFO
-                                    )}>
+                                    button
+                                    className='questionType'
+                                    onClick={() => this.handleMenuChange(questionTypes.INFO)}
+                                    lines='none'
+                                    color={this.calculateColor(questionTypes.INFO)}>
                                     Info &nbsp;
                                     <IonIcon icon={informationCircleOutline} />
                                 </IonItem>
                             </IonList>
                         </IonCol>
                         <IonCol>
-                            {view === questionTypes.SINGLETEXT && (
-                                <SingleText />
-                            )}
-                            {view === questionTypes.RADIOGROUP && (
-                                <RadioGroup />
-                            )}
+                            {view === questionTypes.SINGLETEXT && <SingleText />}
+                            {view === questionTypes.RADIOGROUP && <RadioGroup />}
                             {view === questionTypes.DATETIME && <DateTime />}
-                            {view === questionTypes.CHECKBOXGROUP && (
-                                <CheckboxGroup />
-                            )}
+                            {view === questionTypes.CHECKBOXGROUP && <CheckboxGroup />}
                             {view === questionTypes.SELECT && <Dropdown />}
                             {view === questionTypes.SLIDER && <Slider />}
                             {view === questionTypes.TEXTAREA && <TextArea />}

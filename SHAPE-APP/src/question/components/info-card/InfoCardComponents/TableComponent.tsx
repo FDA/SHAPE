@@ -13,15 +13,15 @@ interface PassedProps {
 
 class TableComponent extends React.Component<PassedProps, {}> {
   render() {
-    let { section } = this.props;
-    let cells = !isEmptyObject(section.cells) ? section.cells : [];
-    let colCount = !isEmptyObject(section.colCount) ? section.colCount : 0;
-    let orderedCells = cells.sort(
+    const { section } = this.props;
+    const cells = !isEmptyObject(section.cells) ? section.cells : [];
+    const colCount = !isEmptyObject(section.colCount) ? section.colCount : 0;
+    const orderedCells = cells.sort(
       (cell1: InfoCardTableCell, cell2: InfoCardTableCell) => {
         return cell1.row - cell2.row;
       }
     );
-    let chunkedData = !isEmptyObject(orderedCells)
+    const chunkedData = !isEmptyObject(orderedCells)
       ? chunk(orderedCells, colCount)
       : [];
     return (

@@ -8,5 +8,6 @@ export const informedConsentFactory = (org: string, req: Request):InformedConsen
       emailSent: req.body.emailSent,
       dateAgreed: req.body.dateAgreed,
       org: org,
+      userId: req.body.userId,
    };
 };

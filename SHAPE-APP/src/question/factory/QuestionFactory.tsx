@@ -30,8 +30,8 @@ export default class QuestionFactory {
     clearValue: Function,
     getCurrentQuestionValue: Function
   ): ReactNode {
-    var retVal = null;
-    for (let qFactory of this.questionFactories) {
+    let retVal = null;
+    for (const qFactory of this.questionFactories) {
       const node = qFactory.createJSX(
         question,
         valueEventHandler,

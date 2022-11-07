@@ -2,9 +2,9 @@ import React, { Component } from "react";
 import { IonButton, IonContent, IonPage, IonText } from "@ionic/react";
 import { connect } from "react-redux";
 import AppHeader from "./AppHeader";
-import { firebase } from "../../config";
 import { FirebaseAuth } from "../../interfaces/DataTypes";
 import { collections, images, routes } from "../../utils/Constants";
+import { addDoc, collection, getFirestore, Timestamp } from "firebase/firestore";
 
 interface PassedProps {
   fireBaseAuth: FirebaseAuth;
@@ -27,20 +27,19 @@ class ErrorBoundary extends Component<PassedProps, ErrorBoundaryState> {
     this.setState({ hasError: true });
     const { fireBaseAuth } = this.props;
     const { uid } = fireBaseAuth;
+    const firestore = getFirestore();
 
-    const fireStore = firebase.firestore();
     const docData = {
       uid: uid,
       errMessage: error.message,
       errStack: error.stack,
       info: info,
-      occuredAt: firebase.firestore.Timestamp.fromDate(new Date()),
+      occuredAt: Timestamp.fromDate(new Date()),
     };
     try {
-      fireStore
-        .collection(collections.ERRORS)
-        .add(docData)
-        .catch((err) => {
+      const collectionRef = collection(firestore, collections.ERRORS);
+      addDoc(collectionRef, docData)
+        .catch((err: any) => {
           console.error(err);
         });
     } catch (e) {

@@ -41,9 +41,9 @@ interface State {
     numQuestionnaires: number;
     questionnaires: Array<QuestionnaireObject>;
     participantResponse: Array<ParticipantResponseObject>;
-    notStartedQs: [];
-    inProgressQs: [];
-    completedQs: [];
+    notStartedQs: QObject;
+    inProgressQs: QObject;
+    completedQs: QObject;
 }
 
 class ParticipantProgress extends Component<Props, State> {
@@ -60,9 +60,18 @@ class ParticipantProgress extends Component<Props, State> {
             numQuestionnaires: 0,
             questionnaires: [],
             participantResponse: [],
-            notStartedQs: [],
-            inProgressQs: [],
-            completedQs: []
+            notStartedQs: {
+                participantId: '',
+                data: []
+            },
+            inProgressQs: {
+                participantId: '',
+                data: []
+            },
+            completedQs: {
+                participantId: '',
+                data: []
+            }
         };
         this.canvas = createRef<HTMLCanvasElement>();
         this.chart = null;
@@ -76,7 +85,7 @@ class ParticipantProgress extends Component<Props, State> {
             .then(() => self.updateCanvas())
             .catch((e: any) => console.error(e));
     }
-    
+
     componentWillUnmount() {
         this._isMounted = false;
     }
@@ -111,13 +120,11 @@ class ParticipantProgress extends Component<Props, State> {
                 });
 
                 return new Promise((resolve: any) => {
-                    if(self._isMounted){
-                        self.setState(
-                            {
-                                participantResponse,
-                                questionnaires
-                            }
-                        );
+                    if (self._isMounted) {
+                        self.setState({
+                            participantResponse,
+                            questionnaires
+                        });
                     }
                     resolve();
                 });
@@ -133,14 +140,12 @@ class ParticipantProgress extends Component<Props, State> {
         let inProgress = this.setNumInProgress();
 
         return new Promise((resolve: any) => {
-            if(self._isMounted){
-                self.setState(
-                    {
-                        completed,
-                        notStarted,
-                        inProgress
-                    }
-                );
+            if (self._isMounted) {
+                self.setState({
+                    completed,
+                    notStarted,
+                    inProgress
+                });
             }
             resolve();
         });
@@ -166,7 +171,8 @@ class ParticipantProgress extends Component<Props, State> {
 
                 if (
                     current.data.participants.includes(participantId) &&
-                    current.data.open === true
+                    current.data.open === true &&
+                    current.data.surveyId === this.props.survey.id
                 ) {
                     questionnaireContainsParticipant.push(current);
                 }
@@ -215,7 +221,8 @@ class ParticipantProgress extends Component<Props, State> {
 
                 if (
                     current.data.participants.includes(participantId) &&
-                    current.data.open === true
+                    current.data.open === true &&
+                    current.data.surveyId === this.props.survey.id
                 ) {
                     questionnaireContainsParticipant.push(current);
                 }

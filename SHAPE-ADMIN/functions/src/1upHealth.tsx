@@ -1,15 +1,14 @@
-import * as request from 'request';
-const axios = require('axios');
-const AUTHCODE_REFRESH_URL =
-    'https://api.1up.health/user-management/v1/user/auth-code';
-const BEARER_TOKEN_URL = 'https://api.1up.health/fhir/oauth2/token';
-const USER_URL = 'https://api.1up.health/user-management/v1/user';
-const functions = require('firebase-functions');
+import * as request from "request";
+import * as functions from "firebase-functions";
+import axios from "axios";
+const AUTHCODE_REFRESH_URL = "https://api.1up.health/user-management/v1/user/auth-code";
+const BEARER_TOKEN_URL = "https://api.1up.health/fhir/oauth2/token";
+const USER_URL = "https://api.1up.health/user-management/v1/user";
 
 const envVars = functions.config();
 
 const _form = {
-    app_user_id: 'SHAPE Application',
+    app_user_id: "SHAPE Application",
     client_id: envVars.one_up_client_id.value,
     client_secret: envVars.one_up_client_secret.value
 };
@@ -22,20 +21,16 @@ export const getUserList = (req: any, res: any) => {
             client_secret: _form.client_secret
         },
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json"
         }
     };
     console.log(`In getUserList with ${localOptions.form.client_id}`);
-    request.get(localOptions, function callback(
-        err: any,
-        httpResponse: any,
-        body: any
-    ) {
+    request.get(localOptions, function callback(err: any, httpResponse: any, body: any) {
         if (err) {
-            console.error('Request failed:', err);
+            console.error("Request failed:", err);
             res.send(err).status(500);
         }
-        console.log('Create EHR  User responded with:', body);
+        console.log("Create EHR  User responded with:", body);
         return res.send(body).status(200);
     });
 };
@@ -50,17 +45,13 @@ export const getNewAuthCode = (req: any, res: any) => {
     };
     console.log(`In getNewAuthCode with ${_form.client_id}`);
     console.log(`getting new auth token with ${JSON.stringify(options)}`);
-    request.post(options, function callback(
-        err: any,
-        httpResponse: any,
-        body: any
-    ) {
+    request.post(options, function callback(err: any, httpResponse: any, body: any) {
         console.log(`returned: ${body}`);
         if (err) {
-            console.error('Request failed:', err);
+            console.error("Request failed:", err);
             res.send(err).status(500);
         }
-        console.log('Create EHR  User responded with:', body);
+        console.log("Create EHR  User responded with:", body);
         return res.send(body).status(200);
     });
 };
@@ -75,16 +66,12 @@ export const getUserCode = (req: any, res: any) => {
         form: _form
     };
     console.log(`In getUserCode with ${_form.client_id}`);
-    request.post(options, function optionalCallback(
-        err: any,
-        httpResponse: any,
-        body: any
-    ) {
+    request.post(options, function optionalCallback(err: any, httpResponse: any, body: any) {
         console.log(`returned: ${body}`);
         if (err) {
             res.send(err).status(500);
         }
-        console.log('Create EHR  User responded with:', body);
+        console.log("Create EHR  User responded with:", body);
         return res.send(body).json().status(200);
     });
 };
@@ -94,28 +81,24 @@ export const getBearerToken = (req: any, res: any) => {
     const participantId = req.query.participantId;
     const code = req.query.code;
     console.log(`Getting bearer token for ${participantId} and code ${code}`);
-    let localform = Object.assign({}, _form);
+    const localform = Object.assign({}, _form);
     localform.app_user_id = participantId;
     // @ts-ignore
     localform.code = code;
     // @ts-ignore
-    localform.grant_type = 'authorization_code';
+    localform.grant_type = "authorization_code";
 
     const options = {
         url: BEARER_TOKEN_URL,
         form: localform
     };
     console.log(`getting new bearer token with ${JSON.stringify(options)}`);
-    request.post(options, function optionalCallback(
-        err: any,
-        httpResponse: any,
-        body: any
-    ) {
+    request.post(options, function optionalCallback(err: any, httpResponse: any, body: any) {
         console.log(`returned: ${body}`);
         if (err) {
             res.send(err).status(500);
         }
-        console.log('Create EHR  User responded with:', body);
+        console.log("Create EHR  User responded with:", body);
         return res.send(body).status(200);
     });
 };
@@ -127,18 +110,14 @@ export const search = (req: any, res: any) => {
     const options = {
         url: SEARCH_URL,
         json: true,
-        headers: {Authorization: `Bearer ${token}`}
+        headers: { Authorization: `Bearer ${token}` }
     };
     console.log(`searching with ${JSON.stringify(options)}`);
-    request.post(options, function callback(
-        err: any,
-        httpResponse: any,
-        body: any
-    ) {
+    request.post(options, function callback(err: any, httpResponse: any, body: any) {
         if (err) {
             res.send(err).status(500);
         }
-        console.log('Search responded with:', JSON.stringify(body));
+        console.log("Search responded with:", JSON.stringify(body));
         return res.send(body).status(200);
     });
 };
@@ -151,19 +130,15 @@ export const getPatient = (req: any, res: any) => {
     const options = {
         url: SEARCH_URL,
         json: true,
-        headers: {Authorization: `Bearer ${token}`}
+        headers: { Authorization: `Bearer ${token}` }
     };
     console.log(`getPatient with ${JSON.stringify(options)}`);
-    request.get(options, function callback(
-        err: any,
-        httpResponse: any,
-        body: any
-    ) {
+    request.get(options, function callback(err: any, httpResponse: any, body: any) {
         console.log(`returned: ${body}`);
         if (err) {
             res.send(err).status(500);
         }
-        console.log('Search responded with:', body);
+        console.log("Search responded with:", body);
         return res.send(body).status(200);
     });
 };
@@ -172,17 +147,15 @@ export const getPatientEHR = async (req: any, res: any) => {
     const patientId = req.query.patientId;
     const ehrType = req.query.ehrType;
     const token = req.query.token;
-    console.log(
-        `in getPatientEHR for ${patientId} and code ${token} and ehrType ${ehrType}`
-    );
+    console.log(`in getPatientEHR for ${patientId} and code ${token} and ehrType ${ehrType}`);
     const SEARCH_URL = `https://api.1up.health/fhir/${ehrType}/Patient/${patientId}/$everything?_count=100`;
     console.log(`SEARCH_URL is ${SEARCH_URL}`);
     let bulkResponse = {};
-    let resp = await getEhrPart(token, SEARCH_URL);
+    const resp = await getEhrPart(token, SEARCH_URL);
     console.log(`resp is: ${JSON.stringify(resp)}`);
-    let hasNext = getNext(resp);
+    const hasNext = getNext(resp);
     console.log(`hasNext is ${hasNext}`);
-    bulkResponse = {...bulkResponse, ...resp};
+    bulkResponse = { ...bulkResponse, ...resp };
     if (resp.link) {
         let url = hasNext.url;
         let keepGoing = true;
@@ -213,7 +186,7 @@ const getEhrPart = async (token: any, url: any) => {
         }
     };
     const payload = await axios.get(url, options);
-    const {data} = payload;
+    const { data } = payload;
     return data;
 };
 
@@ -222,11 +195,11 @@ function getNext(jsonElement: any) {
     if (!jsonElement) {
         return null;
     }
-    const {link} = jsonElement;
+    const { link } = jsonElement;
     console.log(`link is ${link}`);
     if (link) {
         const hasNext = link.filter((item: any) => {
-            return item.relation === 'next';
+            return item.relation === "next";
         });
         if (hasNext) {
             console.log(`Returning hasNext ${JSON.stringify(hasNext[0])}`);

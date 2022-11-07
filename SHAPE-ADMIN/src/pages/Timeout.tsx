@@ -3,8 +3,9 @@ import React, {useEffect, useState} from 'react';
 import {useIdleTimer} from 'react-idle-timer';
 import {IonToast} from '@ionic/react';
 import {logout} from '../redux/actions/Authentication';
+
 import {connect} from 'react-redux';
-import firebase from '../config/fb';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 interface Props {
     logoutDispatch: Function;
@@ -27,7 +28,8 @@ const Timeout: React.FC<Props> = (props: Props) => {
         }
     };
     const handleOnAction = () => {
-        firebase.auth().onAuthStateChanged(async (activeUser) => {
+        const auth = getAuth();
+        onAuthStateChanged(auth, async (activeUser) => {
             if (activeUser) {
                 let currentExpirationTime = JSON.parse(
                     localStorage.getItem('user')

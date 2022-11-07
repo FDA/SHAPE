@@ -9,7 +9,7 @@ import {
   UPDATE_PARTICIPANT,
   PARTICIPANT_INBOX,
 } from "../actions/types";
-import { Participant, User, Message, Person } from "../../interfaces/DataTypes";
+import { Participant, User, Person, Inbox } from "../../interfaces/DataTypes";
 
 const initialState = { querySuccess: null };
 
@@ -18,10 +18,10 @@ export function participant(
   action: { type: string; participant: Participant; profile: User }
 ) {
   switch (action.type) {
-    case ACTIVE_PARTICIPANT:
+    case ACTIVE_PARTICIPANT:{
       const participantData = action.participant;
       return { ...state, ...participantData, querySuccess: true };
-
+}
     case PARTICIPANT_ALREADY_REGISTERED:
       return {
         participant: null,
@@ -38,10 +38,10 @@ export function participant(
     case PARTICIPANT_LOOKUP_RESET:
       return initialState;
 
-    case UPDATE_PARTICIPANT:
+    case UPDATE_PARTICIPANT:{
       const profile = action.profile;
       return { ...state, ...profile, success: true };
-
+}
     default:
       return state;
   }
@@ -49,7 +49,7 @@ export function participant(
 
 export function inbox(
   state = [],
-  action: { type: string; inbox: Array<Message> }
+  action: { type: string; inbox: Array<Inbox> }
 ) {
   switch (action.type) {
     case PARTICIPANT_INBOX:

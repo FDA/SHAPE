@@ -16,36 +16,45 @@ import {
     IonContent,
     IonButtons,
     IonButton,
-    IonAlert
+    IonAlert,
+    IonRadioGroup,
+    IonRadio,
+    IonList
 } from '@ionic/react';
-import {Redirect} from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
-import {add, arrowBackOutline} from 'ionicons/icons';
-import {AppBar} from '@material-ui/core';
-import {TabPanelProps} from '../interfaces/Components';
+import { add, arrowBackOutline } from 'ionicons/icons';
+import { AppBar } from '@material-ui/core';
+import { TabPanelProps } from '../interfaces/Components';
 import ParticipantList from '../list/ParticipantList';
 import ProfileList from '../list/ProfileList';
 import QuestionnaireList from '../list/QuestionnaireList';
 import ParticipantImport from './ParticipantImport';
-import {isEmptyObject} from '../utils/Utils';
-import {storeSurvey, updateSurvey, removeSurvey} from '../redux/actions/Survey';
-import {connect} from 'react-redux';
-import {Survey} from '../interfaces/DataTypes';
+import { isEmptyObject, getColor, guid } from '../utils/Utils';
+import {
+    storeSurvey,
+    updateSurvey,
+    removeSurvey,
+    updateQuestionnairesPublicStatusForSurvey
+} from '../redux/actions/Survey';
+import { connect } from 'react-redux';
+import { Questionnaire, Survey } from '../interfaces/DataTypes';
 import DiaryTypeList from '../list/DiaryTypeList';
 import {
     getQuestionnaires,
     getOpenQuestionnaires,
-    deleteSurvey
+    deleteSurvey /*triggerCloudFunction*/
 } from '../utils/API';
-import {ParticipantProgressPanel} from '../progressCharting';
+import { ParticipantProgressPanel } from '../progressCharting';
 import LoadingScreen from '../layout/LoadingScreen';
-import {EditSaveCancelButton} from './components';
-import {RouteComponentProps} from 'react-router';
-import {routes} from '../utils/Constants';
-import {cloneDeep} from 'lodash';
+import { EditSaveCancelButton } from './components';
+import { ScheduledJobs } from '../scheduledJobs';
+import { RouteComponentProps } from 'react-router';
+import { routes } from '../utils/Constants';
+import { cloneDeep } from 'lodash';
 
 interface StateProps {
     editing: boolean;
@@ -63,14 +72,17 @@ interface StateProps {
     shortDescription: string;
     description: string;
     informedConsent: string;
+    publicAccess: boolean;
 }
 
 interface ReduxProps extends RouteComponentProps {
     survey: Survey;
     loggedIn: boolean;
+    questionnaireList: Questionnaire[];
     storeSurveyDispatch: Function;
     updateSurveyDispatch: Function;
     removeSurveyDispatch: Function;
+    updateQuestionnairesPublicStatusForSurveyDispatch: Function;
 }
 
 class SurveyEditor extends React.Component<ReduxProps, StateProps> {
@@ -91,66 +103,66 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
             name: '',
             shortDescription: '',
             description: '',
-            informedConsent: ''
+            informedConsent: '',
+            publicAccess: false
         };
     }
 
-    UNSAFE_componentWillMount() {
-        const {loggedIn} = this.props;
+    componentDidMount() {
+        const { loggedIn } = this.props;
         if (!loggedIn) {
             this.props.history.push(routes.LOGIN);
         }
     }
 
     UNSAFE_componentWillReceiveProps(props: ReduxProps) {
-        let {editing} = this.state;
+        let { editing } = this.state;
         let survey = cloneDeep(props.survey);
         if (!editing) {
             this.setState({
                 name: survey.name,
                 shortDescription: survey.shortDescription,
                 description: survey.description,
-                informedConsent: survey.informedConsent
+                informedConsent: survey.informedConsent,
+                publicAccess: survey.public ? true : false
             });
         }
     }
 
     setShowAlert(bool: boolean, message: string = '') {
-        this.setState({showAlert: bool, alertMessage: message});
+        this.setState({ showAlert: bool, alertMessage: message });
     }
 
     handleChange = (e: any, val: number) => {
-        this.setState({value: val});
+        this.setState({ value: val });
     };
 
     handleClick = () => {
-        let {survey} = this.props;
+        let { survey } = this.props;
         if (this.state.value === 0) {
             this.props.history.push({
                 pathname: routes.NEW_QUESTIONNAIRE,
-                state: {surveyId: survey.id}
+                state: { surveyId: survey.id }
             });
         } else {
             this.props.history.push({
                 pathname: routes.NEW_PARTICIPANT,
-                state: {surveyId: survey.id}
+                state: { surveyId: survey.id }
             });
         }
     };
 
     edit = () => {
-        this.setState({editing: true});
+        this.setState({ editing: true });
     };
 
     save = () => {
-        let {survey} = this.props;
-        let {name, shortDescription, description, informedConsent} = this.state;
+        let { survey } = this.props;
+        let { name, shortDescription, description, informedConsent, publicAccess } = this.state;
         if (isEmptyObject(name)) name = survey.name;
-        if (isEmptyObject(shortDescription))
-            shortDescription = survey.shortDescription;
+        if (isEmptyObject(shortDescription)) shortDescription = survey.shortDescription;
         if (isEmptyObject(description)) description = survey.description;
-        if (isEmptyObject(informedConsent))
-            informedConsent = survey.informedConsent;
+        if (isEmptyObject(informedConsent)) informedConsent = survey.informedConsent;
 
         if (
             !isEmptyObject(name) &&
@@ -165,78 +177,76 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                 informedConsent: informedConsent,
                 archived: survey.archived,
                 open: survey.open,
-                dateCreated: survey.dateCreated
+                dateCreated: survey.dateCreated,
+                public: publicAccess
             };
             this.props.updateSurveyDispatch(survey.id, tempSurvey);
         } else {
-            this.setState({failure: true});
+            this.setState({ failure: true });
         }
-        this.setState({editing: false});
+        this.setState({ editing: false });
     };
 
     cancel = () => {
-        let {survey} = this.props;
+        let { survey } = this.props;
         this.setState({
             editing: false,
             name: survey.name,
             shortDescription: survey.shortDescription,
             description: survey.description,
-            informedConsent: survey.informedConsent
+            informedConsent: survey.informedConsent,
+            publicAccess: survey.public ? true : false
         });
     };
 
     archive = () => {
-        this.setState({showArchiveAlert: true});
+        this.setState({ showArchiveAlert: true });
     };
 
     open = () => {
-        let {survey} = this.props;
+        let { survey } = this.props;
         getQuestionnaires(survey.id)
             .then((snapshot: any) => {
                 if (snapshot.size === 0) {
                     this.setState({
                         showAlert: true,
-                        alertMessage:
-                            'Create a questionnaire before opening the survey.'
+                        alertMessage: 'Create a questionnaire before opening the survey.'
                     });
                 } else {
-                    this.setState({showOpenAlert: true});
+                    this.setState({ showOpenAlert: true });
                 }
             })
             .catch(() => {
                 this.setState({
                     showAlert: true,
-                    alertMessage:
-                        'Something went wrong. Please refresh and try again.'
+                    alertMessage: 'Something went wrong. Please refresh and try again.'
                 });
             });
     };
 
     close = () => {
-        let {survey} = this.props;
+        let { survey } = this.props;
         getOpenQuestionnaires(survey.id)
             .then((snapshot: any) => {
                 if (snapshot.size > 0) {
                     this.setState({
                         showAlert: true,
-                        alertMessage:
-                            'A survey cannot be closed while a questionnaire is open.'
+                        alertMessage: 'A survey cannot be closed while a questionnaire is open.'
                     });
                 } else {
-                    this.setState({showCloseAlert: true});
+                    this.setState({ showCloseAlert: true });
                 }
             })
             .catch(() => {
                 this.setState({
                     showAlert: true,
-                    alertMessage:
-                        'Something went wrong. Please refresh and try again.'
+                    alertMessage: 'Something went wrong. Please refresh and try again.'
                 });
             });
     };
 
     delete = () => {
-        this.setState({showDeleteAlert: true});
+        this.setState({ showDeleteAlert: true });
     };
 
     getOpenText = (open: boolean, locked: boolean) => {
@@ -246,7 +256,7 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
     };
 
     render() {
-        let {survey} = this.props;
+        let { survey } = this.props;
         let surveyId = survey.id;
         let {
             value,
@@ -262,7 +272,8 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
             name,
             shortDescription,
             description,
-            informedConsent
+            informedConsent,
+            publicAccess
         } = this.state;
 
         return (
@@ -272,45 +283,68 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                     <IonPage>
                         {isLoading && <LoadingScreen />}
                         <AppHeader />
-                        <IonContent className="ion-padding">
+                        <IonContent className='ion-padding' aria-label={`Survey-Content-${guid()}`}>
                             <IonRow>
                                 <IonCol>
-                                    <span style={{float: 'left'}}>
+                                    <span style={{ float: 'left' }}>
                                         <IonFabButton
-                                            style={{'--box-shadow': 'none'}}
-                                            color="light"
-                                            size="small"
+                                            style={{ '--box-shadow': 'none' }}
+                                            color='light'
+                                            size='small'
+                                            title='Home'
                                             href={routes.HOME}>
-                                            <IonIcon
-                                                icon={
-                                                    arrowBackOutline
-                                                }></IonIcon>
+                                            <IonIcon icon={arrowBackOutline} title='Home' />
                                         </IonFabButton>
                                     </span>
                                 </IonCol>
                                 <IonCol>
-                                    <IonText color="primary">
-                                        <span style={{float: 'right'}}>
-                                            <IonButtons slot="end">
+                                    <IonText color='primary'>
+                                        <span style={{ float: 'right' }}>
+                                            <IonButtons slot='end'>
+                                                {/*<IonButton
+                                                    color='danger'
+                                                    fill='outline'
+                                                    onClick={() =>
+                                                        triggerCloudFunction('onQuestionnaireNotCompleted')
+                                                    }>
+                                                    Questionnaire Not Completed
+                                                </IonButton>
+                                                <IonButton
+                                                    color='danger'
+                                                    fill='outline'
+                                                    onClick={() => triggerCloudFunction('onDiaryNotWritten')}>
+                                                    Diary Not Written
+                                                </IonButton>
+                                                <IonButton
+                                                    color='danger'
+                                                    fill='outline'
+                                                    onClick={() =>
+                                                        triggerCloudFunction('onQuestionnaireCompleted')
+                                                    }>
+                                                    Questionnaire Complete
+                                                </IonButton>
+                                                <IonButton
+                                                    color='danger'
+                                                    fill='outline'
+                                                    onClick={() => triggerCloudFunction('onSurveyJoined')}>
+                                                    Join Survey
+                                                </IonButton>*/}
+
                                                 <IonButton
                                                     disabled={
-                                                        (!isEmptyObject(
-                                                            survey.locked
-                                                        )
+                                                        (!isEmptyObject(survey.locked)
                                                             ? survey.locked
                                                             : false) || editing
                                                     }
-                                                    color="primary"
+                                                    color='primary'
                                                     onClick={() => this.open()}>
-                                                    Open
+                                                    <b>Open</b>
                                                 </IonButton>
                                                 <IonButton
                                                     disabled={!survey.open}
-                                                    color="secondary"
-                                                    onClick={() =>
-                                                        this.close()
-                                                    }>
-                                                    Close
+                                                    color='secondary'
+                                                    onClick={() => this.close()}>
+                                                    <b>Close</b>
                                                 </IonButton>
                                                 <EditSaveCancelButton
                                                     edit={this.edit}
@@ -321,37 +355,34 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                                                 />
                                                 {survey.locked && (
                                                     <IonButton
-                                                        color="danger"
+                                                        color='danger'
                                                         disabled={survey.open}
-                                                        onClick={() =>
-                                                            this.archive()
-                                                        }>
-                                                        Archive
+                                                        onClick={() => this.archive()}>
+                                                        <b>Archive</b>
                                                     </IonButton>
                                                 )}
                                                 {!survey.locked && (
-                                                    <IonButton
-                                                        color="danger"
-                                                        onClick={() =>
-                                                            this.delete()
-                                                        }>
-                                                        Delete
+                                                    <IonButton color='danger' onClick={() => this.delete()}>
+                                                        <b>Delete</b>
                                                     </IonButton>
                                                 )}
+                                                <ScheduledJobs
+                                                    survey={this.props.survey}
+                                                    questionnaireList={this.props.questionnaireList}
+                                                    updateSurveyDispatch={this.props.updateSurveyDispatch}
+                                                />
                                             </IonButtons>
                                         </span>
                                     </IonText>
                                 </IonCol>
                             </IonRow>
                             <IonRow>
-                                <IonCol>
+                                <IonCol size='10'>
                                     <IonItem>
-                                        <IonLabel color="primary">
-                                            Survey Name
-                                        </IonLabel>
+                                        <IonLabel color='primary'>Survey Name</IonLabel>
                                         <IonInput
-                                            id="survey-name"
-                                            placeholder="Enter Input"
+                                            id='survey-name'
+                                            placeholder='Enter Input'
                                             value={name}
                                             readonly={!editing}
                                             onIonInput={(e: any) => {
@@ -362,37 +393,15 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                                         />
                                     </IonItem>
                                 </IonCol>
-                                <IonCol>
+                                <IonCol
+                                    size='2'
+                                    style={{ backgroundColor: getColor(survey.open, survey.locked) }}>
                                     <IonItem>
-                                        <IonLabel color="primary">
-                                            Subtitle
-                                        </IonLabel>
+                                        <IonLabel color='primary'>Status</IonLabel>
                                         <IonInput
-                                            id="survey-subtitle"
-                                            placeholder="Survey Subtitle"
-                                            value={shortDescription}
-                                            readonly={!editing}
-                                            onIonInput={(e: any) => {
-                                                this.setState({
-                                                    shortDescription:
-                                                        e.target.value
-                                                });
-                                            }}
-                                        />
-                                    </IonItem>
-                                </IonCol>
-                                <IonCol>
-                                    <IonItem>
-                                        <IonLabel color="primary">
-                                            Status
-                                        </IonLabel>
-                                        <IonInput
-                                            id="survey-status"
-                                            placeholder="Survey Status"
-                                            value={this.getOpenText(
-                                                survey.open,
-                                                survey.locked
-                                            )}
+                                            id='survey-status'
+                                            placeholder='Survey Status'
+                                            value={this.getOpenText(survey.open, survey.locked)}
                                             readonly={true}
                                         />
                                     </IonItem>
@@ -401,13 +410,29 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                             <IonRow>
                                 <IonCol>
                                     <IonItem>
-                                        <IonLabel color="primary">
-                                            Description
-                                        </IonLabel>
+                                        <IonLabel color='primary'>Subtitle</IonLabel>
+                                        <IonInput
+                                            id='survey-subtitle'
+                                            placeholder='Survey Subtitle'
+                                            value={shortDescription}
+                                            readonly={!editing}
+                                            onIonInput={(e: any) => {
+                                                this.setState({
+                                                    shortDescription: e.target.value
+                                                });
+                                            }}
+                                        />
+                                    </IonItem>
+                                </IonCol>
+                            </IonRow>
+                            <IonRow>
+                                <IonCol>
+                                    <IonItem>
+                                        <IonLabel color='primary'>Description</IonLabel>
                                         <IonTextarea
-                                            id="survey-description"
-                                            rows={2}
-                                            placeholder="Survey Description"
+                                            id='survey-description'
+                                            rows={1}
+                                            placeholder='Survey Description'
                                             value={description}
                                             readonly={!editing}
                                             onIonChange={(e: any) => {
@@ -423,51 +448,65 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                                 <IonCol>
                                     <IonItem>
                                         <IonLabel
-                                            position="stacked"
-                                            color="primary"
-                                            style={{fontSize: '22px'}}>
+                                            position='stacked'
+                                            color='primary'
+                                            style={{ fontSize: '22px' }}>
                                             Informed Consent
                                         </IonLabel>
                                         <IonTextarea
-                                            id="informed-consent"
+                                            id='informed-consent'
                                             readonly={!editing}
-                                            rows={6}
-                                            placeholder="Informed Consent goes here..."
+                                            rows={4}
+                                            placeholder='Informed Consent goes here...'
                                             value={informedConsent}
                                             onIonChange={(e: any) => {
                                                 this.setState({
-                                                    informedConsent:
-                                                        e.target.value
+                                                    informedConsent: e.target.value
                                                 });
                                             }}
                                         />
                                     </IonItem>
                                 </IonCol>
+                                <IonCol size='2'>
+                                    <IonRadioGroup
+                                        title='Survey Access'
+                                        aria-owns='private public'
+                                        value={publicAccess}
+                                        onClick={(e: any) =>
+                                            this.setState({
+                                                publicAccess: e.target.value
+                                            })
+                                        }>
+                                        <IonList>
+                                            <IonItem>
+                                                <IonLabel>Private</IonLabel>
+                                                <IonRadio
+                                                    id='public'
+                                                    slot='start'
+                                                    value={false}
+                                                    disabled={!editing}
+                                                />
+                                            </IonItem>
+                                            <IonItem>
+                                                <IonLabel>Public</IonLabel>
+                                                <IonRadio
+                                                    id='private'
+                                                    slot='start'
+                                                    value={true}
+                                                    disabled={!editing}
+                                                />
+                                            </IonItem>
+                                        </IonList>
+                                    </IonRadioGroup>
+                                </IonCol>
                             </IonRow>
-                            <AppBar
-                                style={{backgroundColor: '#007CBA'}}
-                                position="static">
-                                <Tabs
-                                    value={value}
-                                    onChange={this.handleChange}
-                                    aria-label="survey-tabs">
-                                    <Tab
-                                        label="Questionnaires"
-                                        {...a11yProps(0)}
-                                    />
-                                    <Tab
-                                        label="Health Events"
-                                        {...a11yProps(1)}
-                                    />
-                                    <Tab
-                                        label="Respondents"
-                                        {...a11yProps(2)}
-                                    />
-                                    <Tab
-                                        label="Participants"
-                                        {...a11yProps(3)}
-                                    />
-                                    <Tab label="Progress" {...a11yProps(4)} />
+                            <AppBar style={{ backgroundColor: '#007CBA' }} position='static'>
+                                <Tabs value={value} onChange={this.handleChange} aria-label='survey-tabs'>
+                                    <Tab label='Questionnaires' {...a11yProps(0)} />
+                                    <Tab label='Health Events' {...a11yProps(1)} />
+                                    <Tab label='Respondents' {...a11yProps(2)} />
+                                    <Tab label='Participants' {...a11yProps(3)} />
+                                    <Tab label='Progress' {...a11yProps(4)} />
                                 </Tabs>
                             </AppBar>
                             <TabPanel value={value} index={0}>
@@ -479,13 +518,15 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                                 <DiaryTypeList />
                             </TabPanel>
                             <TabPanel value={value} index={2}>
+                                {!survey.public && (
+                                    <IonRow>
+                                        <IonCol size='12'>
+                                            <ParticipantImport />
+                                        </IonCol>
+                                    </IonRow>
+                                )}
                                 <IonRow>
-                                    <IonCol size="12">
-                                        <ParticipantImport />
-                                    </IonCol>
-                                </IonRow>
-                                <IonRow>
-                                    <IonCol size="12">
+                                    <IonCol size='12'>
                                         <ParticipantList />
                                     </IonCol>
                                 </IonRow>
@@ -494,23 +535,19 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                                 <ProfileList />
                             </TabPanel>
                             <TabPanel value={value} index={4}>
-                                <ParticipantProgressPanel view="survey" />
+                                <ParticipantProgressPanel view='survey' />
                             </TabPanel>
 
-                            {value !== 3 && value !== 1 && value !== 4 && (
-                                <IonFab
-                                    vertical="bottom"
-                                    horizontal="end"
-                                    slot="fixed">
+                            {value !== 3 && value !== 1 && value !== 4 && !(value === 2 && survey.public) && (
+                                <IonFab vertical='bottom' horizontal='end' slot='fixed'>
                                     <IonFabButton
+                                        title='Add Questionnaire'
                                         disabled={
                                             !survey.open &&
-                                            (!isEmptyObject(survey.locked)
-                                                ? survey.locked
-                                                : false)
+                                            (!isEmptyObject(survey.locked) ? survey.locked : false)
                                         }
                                         onClick={() => this.handleClick()}>
-                                        <IonIcon icon={add} />
+                                        <IonIcon icon={add} title='Add Questionnaire' />
                                     </IonFabButton>
                                 </IonFab>
                             )}
@@ -520,7 +557,7 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showDeleteAlert}
                     onDidDismiss={() => {
-                        this.setState({showDeleteAlert: false});
+                        this.setState({ showDeleteAlert: false });
                     }}
                     header={'Delete Survey'}
                     message={`Are you sure you want to delete this survey? The survey's data cannot be recovered.`}
@@ -536,18 +573,14 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                                 deleteSurvey(survey.id)
                                     .then((res: any) => {
                                         let parent = this;
-                                        this.setState({isLoading: true});
-                                        this.props.removeSurveyDispatch(
-                                            survey.id
-                                        );
+                                        this.setState({ isLoading: true });
+                                        this.props.removeSurveyDispatch(survey.id);
                                         setTimeout(function () {
                                             parent.setState({
                                                 isLoading: false,
                                                 redirect: true
                                             });
-                                            parent.props.history.push(
-                                                routes.HOME
-                                            );
+                                            parent.props.history.push(routes.HOME);
                                         }, 1000);
                                     })
                                     .catch((err) => {
@@ -560,7 +593,7 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showArchiveAlert}
                     onDidDismiss={() => {
-                        this.setState({showArchiveAlert: false});
+                        this.setState({ showArchiveAlert: false });
                     }}
                     header={'Archive Survey'}
                     message={`Are you sure you want to archive this survey? The survey's data will not be deleted, but you will no longer be able to access it.`}
@@ -574,10 +607,10 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                             text: 'Yes',
                             handler: () => {
                                 let parent = this;
-                                this.setState({isLoading: true});
+                                this.setState({ isLoading: true });
                                 this.props.updateSurveyDispatch(surveyId, {
                                     ...survey,
-                                    ...{archived: true, open: false}
+                                    ...{ archived: true, open: false }
                                 });
                                 this.props.removeSurveyDispatch(surveyId);
                                 setTimeout(function () {
@@ -594,7 +627,7 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showOpenAlert}
                     onDidDismiss={() => {
-                        this.setState({showOpenAlert: false});
+                        this.setState({ showOpenAlert: false });
                     }}
                     header={'Open Survey'}
                     message={`Are you sure you want to open this survey? You will no longer be able to edit the survey details. This action cannot be undone.`}
@@ -609,8 +642,12 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                             handler: () => {
                                 this.props.updateSurveyDispatch(surveyId, {
                                     ...survey,
-                                    ...{open: true, locked: true}
+                                    ...{ open: true, locked: true }
                                 });
+                                this.props.updateQuestionnairesPublicStatusForSurveyDispatch(
+                                    surveyId,
+                                    survey.public
+                                );
                             }
                         }
                     ]}
@@ -618,7 +655,7 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showCloseAlert}
                     onDidDismiss={() => {
-                        this.setState({showCloseAlert: false});
+                        this.setState({ showCloseAlert: false });
                     }}
                     header={'Close Survey'}
                     message={`Are you sure you want to close this survey? Users will no longer have access to any questionnaires in this survey. You will no longer make any edits to any questionnaires or participants. This action cannot be undone.`}
@@ -633,7 +670,7 @@ class SurveyEditor extends React.Component<ReduxProps, StateProps> {
                             handler: () => {
                                 this.props.updateSurveyDispatch(surveyId, {
                                     ...survey,
-                                    ...{open: false}
+                                    ...{ open: false }
                                 });
                             }
                         }
@@ -661,12 +698,12 @@ function a11yProps(index: any) {
 }
 
 function TabPanel(props: TabPanelProps) {
-    const {children, value, index, ...other} = props;
+    const { children, value, index, ...other } = props;
 
     return (
         <Typography
-            component="div"
-            role="tabpanel"
+            component='div'
+            role='tabpanel'
             hidden={value !== index}
             id={`simple-tabpanel-${index}`}
             aria-labelledby={`simple-tab-${index}`}
@@ -680,6 +717,7 @@ function TabPanel(props: TabPanelProps) {
 function mapStateToProps(state: any) {
     return {
         survey: state.survey,
+        questionnaireList: state.questionnaireList,
         loggedIn: state.authentication.loggedIn
     };
 }
@@ -695,6 +733,9 @@ function mapDispatchToProps(dispatch: any) {
         },
         removeSurveyDispatch(surveyId: string) {
             dispatch(removeSurvey(surveyId));
+        },
+        updateQuestionnairesPublicStatusForSurveyDispatch(surveyId: string, publicStatus: boolean) {
+            dispatch(updateQuestionnairesPublicStatusForSurvey(surveyId, publicStatus));
         }
     };
 }

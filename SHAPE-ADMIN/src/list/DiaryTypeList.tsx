@@ -11,16 +11,12 @@ import {
     IonRow
 } from '@ionic/react';
 
-import {isEmptyObject} from '../utils/Utils';
-import {
-    getDiaryJSONExport,
-    getDiaryFHIRExport,
-    getDiaryResponses
-} from '../utils/API';
-import React, {Component} from 'react';
-import {connect} from 'react-redux';
+import { isEmptyObject } from '../utils/Utils';
+import { getDiaryJSONExport, getDiaryFHIRExport, getDiaryResponses } from '../utils/API';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import Loading from '../layout/Loading';
-import {Survey, DiaryResponse} from '../interfaces/DataTypes';
+import { Survey, DiaryResponse } from '../interfaces/DataTypes';
 
 interface ReduxProps {
     survey: Survey;
@@ -47,7 +43,7 @@ class DiaryTypeList extends Component<ReduxProps, State> {
 
     componentDidMount() {
         this._isMounted = true;
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         this.getDiaryResponses();
     }
 
@@ -56,7 +52,7 @@ class DiaryTypeList extends Component<ReduxProps, State> {
     }
 
     getDiaryResponses = () => {
-        let {id} = this.props.survey;
+        let { id } = this.props.survey;
         getDiaryResponses(id)
             .then((res: any) => {
                 let diaryResponses: Array<DiaryResponse> = [];
@@ -65,9 +61,11 @@ class DiaryTypeList extends Component<ReduxProps, State> {
                     temp.id = doc.id;
                     diaryResponses.push(temp);
                 });
-                if(this._isMounted){
+                if (this._isMounted) {
                     this.setState({
-                        diaryResponses,
+                        diaryResponses: [...diaryResponses].sort((dr1: any, dr2: any) =>
+                            dr1.id > dr2.id ? 1 : -1
+                        ),
                         isLoading: false,
                         error: false
                     });
@@ -75,7 +73,7 @@ class DiaryTypeList extends Component<ReduxProps, State> {
             })
             .catch((err: any) => {
                 console.error(err);
-                if(this._isMounted){
+                if (this._isMounted) {
                     this.setState({
                         isLoading: false,
                         error: true
@@ -87,7 +85,7 @@ class DiaryTypeList extends Component<ReduxProps, State> {
     processDownload = (response: any) => {
         const fileName = `${this.props.survey.name}_diary_responses`;
         const json = JSON.stringify(response, null, 2);
-        const blob = new Blob([json], {type: 'application/json'});
+        const blob = new Blob([json], { type: 'application/json' });
         const href = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = href;
@@ -118,59 +116,55 @@ class DiaryTypeList extends Component<ReduxProps, State> {
     };
 
     getResponsesPanel = () => {
-        let {diaryResponses, isLoading, error} = this.state;
+        let { diaryResponses, isLoading, error } = this.state;
         return (
-            <IonList style={{padding: '16px'}}>
-                <IonItem color="light">
-                    <IonCol size="2">
+            <IonList style={{ padding: '16px' }}>
+                <IonItem color='light'>
+                    <IonCol size='2'>
                         <IonLabel>Participant Id</IonLabel>
                     </IonCol>
-                    <IonCol size="2">
+                    <IonCol size='2'>
                         <IonLabel>Profile Name</IonLabel>
                     </IonCol>
-                    <IonCol size="2">
+                    <IonCol size='2'>
                         <IonLabel>Health Event</IonLabel>
                     </IonCol>
-                    <IonCol size="4">
+                    <IonCol size='4'>
                         <IonLabel>Date Written</IonLabel>
                     </IonCol>
                 </IonItem>
                 {isLoading && (
                     <IonRow text-center>
-                        <IonCol size="12" style={{textAlign: 'center'}}>
+                        <IonCol size='12' style={{ textAlign: 'center' }}>
                             <Loading />
                         </IonCol>
                     </IonRow>
                 )}
                 {error && (
-                    <IonCard style={{textAlign: 'center'}}>
+                    <IonCard style={{ textAlign: 'center' }}>
                         <IonCardContent>
-                            <IonText color="danger">
-                                Error loading questionnaires. Try refreshing.
-                            </IonText>
+                            <IonText color='danger'>Error loading questionnaires. Try refreshing.</IonText>
                         </IonCardContent>
                     </IonCard>
                 )}
                 {isEmptyObject(diaryResponses) && !isLoading && (
-                    <IonCard style={{textAlign: 'center'}}>
-                        <IonCardContent>
-                            No diary responses are currently available.
-                        </IonCardContent>
+                    <IonCard style={{ textAlign: 'center' }}>
+                        <IonCardContent>No diary responses are currently available.</IonCardContent>
                     </IonCard>
                 )}
                 {diaryResponses.map((n: any) => {
                     return (
                         <IonItem key={n.id}>
-                            <IonCol size="2">
+                            <IonCol size='2'>
                                 <IonLabel>{n.participantId}</IonLabel>
                             </IonCol>
-                            <IonCol size="2">
+                            <IonCol size='2'>
                                 <IonLabel>{n.profileName}</IonLabel>
                             </IonCol>
-                            <IonCol size="2">
+                            <IonCol size='2'>
                                 <IonLabel>{n.formType}</IonLabel>
                             </IonCol>
-                            <IonCol size="2">
+                            <IonCol size='2'>
                                 <IonLabel>{n.dateWritten.toString()}</IonLabel>
                             </IonCol>
                         </IonItem>
@@ -184,11 +178,11 @@ class DiaryTypeList extends Component<ReduxProps, State> {
         return (
             <>
                 <IonCard>
-                    <IonTitle class="ion-text-center" style={{padding: '16px'}}>
+                    <IonTitle class='ion-text-center' style={{ padding: '16px' }}>
                         Responses
                     </IonTitle>
                     <IonButton
-                        style={{marginLeft: '16px'}}
+                        style={{ marginLeft: '16px' }}
                         onClick={(e: any) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -197,7 +191,7 @@ class DiaryTypeList extends Component<ReduxProps, State> {
                         Download Responses (JSON)
                     </IonButton>
                     <IonButton
-                        style={{marginLeft: '16px'}}
+                        style={{ marginLeft: '16px' }}
                         onClick={(e: any) => {
                             e.preventDefault();
                             e.stopPropagation();

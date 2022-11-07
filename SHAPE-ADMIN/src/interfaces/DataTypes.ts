@@ -10,6 +10,31 @@ export interface Survey {
     org?: string;
     participants?: Array<string>;
     locked?: boolean;
+    public?: boolean;
+    scheduledJobs?: Array<ScheduledJob>;
+}
+export interface ScheduledJob {
+    id: string;
+    name?: string;
+    message?: string;
+    type: string;
+    interval: number;
+    duration?: number;
+    frequency?: number;
+    enabled: boolean;
+    questionnaireToJoin?: string;
+    questionnaireCompleted?: string;
+    questionnaireNotCompleted?: string;
+    surveyId?: string;
+}
+export interface JobError {
+    name: string;
+    message: string;
+}
+
+export interface SelectOption {
+    name: number | string;
+    value: number;
 }
 
 export interface InfoCardSection {
@@ -77,11 +102,12 @@ export interface QuestionRule {
     };
     id: number;
     ruleType: string;
-    skipTo: string;
+    skipTo?: string;
+    addTo?: string;
 }
 
 export interface Options {
-    step: number;
+    step: number | string;
     max: number | string;
     min: number | string;
     pin: boolean;
@@ -107,8 +133,8 @@ export interface QuestionnaireQuestion {
     placeholder?: string;
     orderNumber?: number;
     requiredMessage?: string;
-    min?: number;
-    max?: number;
+    min?: string;
+    max?: string;
     format?: string;
 }
 
@@ -125,8 +151,9 @@ export interface Questionnaire {
     participants?: Array<string>;
     archived: boolean;
     locked?: boolean;
+    public?: boolean;
+    org?: string;
 }
-
 export interface Q13 {
     id: string;
     questionnaire: Questionnaire;
@@ -151,8 +178,8 @@ export interface Question {
     value?: string;
     placeholder?: string;
     requiredMessage?: string;
-    min?: number;
-    max?: number;
+    min?: string;
+    max?: string;
     format?: string;
 }
 
@@ -191,11 +218,17 @@ export interface EHR {
 export interface Participant {
     docId?: string;
     org?: string;
+    userId?: string;
     participantId: string;
     public: boolean;
     securityQuestions: Array<SecurityQuestion>;
     optedOut?: boolean;
     purged?: boolean;
+}
+
+export interface ParticipantObject {
+    id: string;
+    org: string;
 }
 
 export interface User {
@@ -207,17 +240,17 @@ export interface User {
     firstName: string;
     lastName: string;
     phoneNumber: string;
-    participantId: string;
-    securityQuestions: Array<SecurityQuestion>;
+    participantId: Array<ParticipantObject>;
     profiles: Array<Person>;
     emailEnabled: boolean;
     smsEnabled: boolean;
     pushEnabled: boolean;
     agreedToTerms: boolean;
     agreedToTermsDate: string;
-    org?: string;
+    org: Array<string>;
     linkedRecords?: Array<LinkedRecord>;
     token?: string;
+    userId: string;
 }
 
 export interface Org {
@@ -257,6 +290,7 @@ export interface DiaryResponse {
     outcomeSpecification?: string; //event
     eventTreatment?: string; //event
     postEventTreatment?: string; //event
+    userId: string;
 }
 
 interface ProviderData {
@@ -326,11 +360,23 @@ export interface Organization {
 export interface Message {
     emailRecipients: Array<string>;
     pushRecipients: Array<string>;
+    inAppRecipients: Array<string>;
     smsRecipients: Array<string>;
     message: string;
     org: string;
     subject: string;
     timestamp: string;
+}
+
+export interface Inbox {
+    id?: string;
+    message: string;
+    read: boolean;
+    subject: string;
+    timestamp: string;
+    org?: string;
+    participantId: string;
+    userId: string;
 }
 
 //participant-response
@@ -345,6 +391,7 @@ export interface ParticipantResponse {
     questionnaireId: string;
     responses: Array<Response>;
     surveyId: string;
+    userId: string;
 }
 
 export interface ImageMetadata {

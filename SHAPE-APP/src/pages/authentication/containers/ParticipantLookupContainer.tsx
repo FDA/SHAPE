@@ -17,6 +17,8 @@ interface PassedProps {
   participant: PL;
   darkMode: boolean;
   orgs: Choice[];
+  selectedOrg: string;
+  isEmpty: boolean;
 }
 
 interface ParticipantLookupContainerState {}
@@ -36,8 +38,9 @@ class ParticipantLookupContainer extends Component<
       resetLookup,
       loading,
       participant,
-      darkMode,
       orgs,
+      selectedOrg,
+      isEmpty
     } = this.props;
 
     return (
@@ -47,8 +50,9 @@ class ParticipantLookupContainer extends Component<
         resetparticipantLookup={resetLookup}
         loading={loading}
         participant={participant}
-        darkMode={darkMode}
         orgs={orgs}
+        selectedOrg={selectedOrg}
+        isEmpty={isEmpty}
       />
     );
   };
@@ -57,8 +61,9 @@ class ParticipantLookupContainer extends Component<
 export const mapStateToProps = (state: any) => ({
   loading: state.loading,
   participant: state.participant,
-  darkMode: state.darkMode,
   orgs: state.orgs,
+  selectedOrg: state.selectedOrg,
+  isEmpty: state.firebase.auth.isEmpty
 });
 
 export const mapDispatchToProps = (dispatch: any) => {

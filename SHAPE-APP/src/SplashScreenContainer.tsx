@@ -18,7 +18,7 @@ interface PassedProps {
 
 class SplashScreenContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       fireBaseAuth,
       applicationReady,
       previewMode,
@@ -37,6 +37,7 @@ class SplashScreenContainer extends Component<PassedProps, {}> {
         previewMode={previewMode}
         firebaseLoggedIn={firebaseLoggedIn}
         profile={profile}
+        // eslint-disable-next-line react/no-children-prop
         children={children}
       />
     );
@@ -55,13 +56,8 @@ const mapDispatchToProps = (dispatch: any) => {
     setReadyStateDispatch(newState: boolean) {
       setReadyState(newState);
     },
-    refreshAllDispatch(
-      org: string,
-      participantId: string,
-      userId: string,
-      pushEnabled: boolean
-    ) {
-      dispatch(refreshAll(org, participantId, userId, pushEnabled));
+    refreshAllDispatch() {
+      dispatch(refreshAll());
     },
   };
 };

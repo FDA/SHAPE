@@ -11,9 +11,9 @@ interface MainTabsProps extends RouteComponentProps {
   profile: User;
 }
 
-class TabsContainer extends Component<MainTabsProps, {}> {
+class TabsContainer extends Component<MainTabsProps> {
   render() {
-    let {
+    const {
       firebaseLoggedIn,
       prefersDarkMode,
       participantResponse,
@@ -41,6 +41,6 @@ const mapStateToProps = (state: any) => ({
   profile: state.firebase.profile,
 });
 
-const mapDispatchToProps = (dispatch: any) => ({});
+const mapDispatchToProps = (/* dispatch: any */) => ({});
 
 export default connect(mapStateToProps, mapDispatchToProps)(TabsContainer);

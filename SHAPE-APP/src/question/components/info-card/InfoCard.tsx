@@ -28,8 +28,8 @@ interface PassedProps {
 
 class InfoCard extends Component<PassedProps, {}> {
   render() {
-    let { question } = this.props;
-    let { sections } = question as QuestionnaireInfoQuestion;
+    const { question } = this.props;
+    const { sections } = question as QuestionnaireInfoQuestion;
     return (
       <>
         <IonCard>
@@ -77,11 +77,7 @@ class InfoCard extends Component<PassedProps, {}> {
               if (section.type === sectionTypes.IMAGE) {
                 return (
                   <ImageDisplayComponent
-                    org={
-                      !isEmptyObject(this.props.profile.org)
-                        ? this.props.profile.org
-                        : this.props.org
-                    }
+                    org={this.props.org}
                     section={section as InfoCardImageSection}
                     key={index}
                   />

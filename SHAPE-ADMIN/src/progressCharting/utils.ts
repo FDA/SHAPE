@@ -51,6 +51,7 @@ export function getBarOptions(): Chart.ChartOptions {
             ]
         },
         legend: {
+            onClick: (e) => e.preventDefault(),
             display: true,
             position: 'bottom',
             align: 'start',

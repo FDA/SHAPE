@@ -1,86 +1,93 @@
-import React, { Component } from "react";
-import { Redirect } from "react-router-dom";
+import React, { Component } from 'react';
+import { Redirect } from 'react-router-dom';
 import {
-  IonToolbar,
-  IonText,
-  IonButton,
-  IonCard,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonCardContent,
-  IonFooter,
-} from "@ionic/react";
-import {
-  User,
-  Message as MessageType,
-  FirebaseAuth,
-} from "../../../interfaces/DataTypes";
-import { routes } from "../../../utils/Constants";
+    IonToolbar,
+    IonButton,
+    IonCardSubtitle,
+    IonCardTitle,
+    IonModal,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonButtons,
+    IonItem,
+    IonLabel
+} from '@ionic/react';
+import { User, Inbox, FirebaseAuth } from '../../../interfaces/DataTypes';
+import { routes } from '../../../utils/Constants';
+import { ColoredLine } from '../../survey/components';
+import { format } from 'date-fns';
 
 interface PassedProps {
-  profile: User;
-  loadParticipantInbox: Function;
-  message: MessageType;
-  deleteMessage: Function;
-  closeMessage: Function;
-  fireBaseAuth: FirebaseAuth;
+    profile: User;
+    loadParticipantInbox: Function;
+    message: Inbox;
+    deleteMessage: Function;
+    closeMessage: Function;
+    fireBaseAuth: FirebaseAuth;
+    showMessage: boolean;
+    router: HTMLElement;
 }
 
 class Message extends Component<PassedProps, {}> {
-  deleteMessage = () => {
-    let { profile, message, deleteMessage, closeMessage } = this.props;
-    let { participantId, org } = profile;
-    let messageId = message.id;
+    deleteMessage = () => {
+        const { message, deleteMessage, closeMessage } = this.props;
+        const messageId = message.id;
 
-    deleteMessage(participantId, messageId, org);
-    closeMessage();
-  };
+        deleteMessage(messageId);
+        closeMessage();
+    };
 
-  render() {
-    let { message, fireBaseAuth, closeMessage } = this.props;
-    let { isEmpty } = fireBaseAuth;
+    render() {
+        const { message, fireBaseAuth, closeMessage, showMessage, router } = this.props;
+        const { isEmpty } = fireBaseAuth;
 
-    if (isEmpty) return <Redirect to={routes.LOGIN} />;
+        if (isEmpty) return <Redirect to={routes.LOGIN} />;
 
-    return (
-      <>
-        <IonButton
-          fill="clear"
-          size="small"
-          onClick={() => closeMessage()}
-        >{`< Back`}</IonButton>
-        <IonCard>
-          <IonCardHeader color="light">
-            <IonCardTitle>{message.subject}</IonCardTitle>
-            <IonCardSubtitle>{message.timestamp}</IonCardSubtitle>
-          </IonCardHeader>
-          <IonCardContent style={{ paddingTop: 10 }}>
-            <IonText>{message.message}</IonText>
-          </IonCardContent>
-          <IonFooter>
-            <IonToolbar
-              style={{
-                paddingLeft: "6px",
-                paddingBottom: "4px",
-                paddingRight: "6px",
-              }}
-            >
-              <IonButton
-                slot="end"
-                color="danger"
-                fill="clear"
-                size="small"
-                onClick={() => this.deleteMessage()}
-              >
-                Delete
-              </IonButton>
-            </IonToolbar>
-          </IonFooter>
-        </IonCard>
-      </>
-    );
-  }
+        return (
+            <IonModal
+                isOpen={showMessage}
+                swipeToClose={false}
+                presentingElement={router || undefined}
+                onDidDismiss={() => closeMessage()}>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>
+                            <strong>Inbox Message</strong>
+                        </IonTitle>
+                        <IonButtons slot='start'>
+                            <IonButton color='primary' type='button' onClick={() => closeMessage()}>
+                                Cancel
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonContent className='ion-padding'>
+                    <IonHeader className='ion-padding-bottom'>
+                        <IonCardTitle>{message.subject}</IonCardTitle>
+                        <ColoredLine></ColoredLine>
+                        {message.timestamp && (
+                            <IonCardSubtitle>{format(new Date(message.timestamp), 'PP pp')}</IonCardSubtitle>
+                        )}
+                    </IonHeader>
+                    <IonItem className='ion-margin-bottom' color='light' lines={'none'}>
+                        <IonLabel tabIndex={1} className='ion-padding-horizontal ion-text-wrap'>
+                            {message.message}
+                        </IonLabel>
+                    </IonItem>
+                    <IonButton
+                        type='button'
+                        onClick={() => this.deleteMessage()}
+                        expand='block'
+                        fill='solid'
+                        color='danger'>
+                        Delete
+                    </IonButton>
+                </IonContent>
+            </IonModal>
+        );
+    }
 }
 
 export default Message;

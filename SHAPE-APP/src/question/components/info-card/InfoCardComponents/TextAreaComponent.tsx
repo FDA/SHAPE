@@ -8,7 +8,7 @@ interface PassedProps {
 
 class TextAreaComponent extends React.Component<PassedProps, {}> {
   render() {
-    let { section, index } = this.props;
+    const { section, index } = this.props;
     return <p key={index}>{section.value}</p>;
   }
 }

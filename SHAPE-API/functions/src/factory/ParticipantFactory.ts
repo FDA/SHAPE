@@ -7,5 +7,6 @@ export const participantFactory = (org: string, req: Request):Participant => {
       public: req.body.public,
       securityQuestions: req.body.securityQuestions,
       org: org,
+      optedOut: req.body.optedOut ? req.body.optedOut : false,
    };
 };

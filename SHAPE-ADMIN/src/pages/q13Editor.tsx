@@ -18,33 +18,32 @@ import {
     IonText,
     IonTextarea
 } from '@ionic/react';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
-import {add} from 'ionicons/icons';
-import {AppBar} from '@material-ui/core';
-import {TabPanelProps} from '../interfaces/Components';
+import { add } from 'ionicons/icons';
+import { AppBar } from '@material-ui/core';
+import { TabPanelProps } from '../interfaces/Components';
 import Reorder from '../questionAction/Reorder';
-import {isEmptyObject} from '../utils/Utils';
-import {getUser, sendToInbox, deleteQuestionnaire} from '../utils/API';
+import { isEmptyObject, getColor, guid } from '../utils/Utils';
+import { getParticipant, getUserInfo, sendToInbox, deleteQuestionnaire } from '../utils/API';
 import Q13ParticipantList from '../list/q13ParticipantList';
-import {
-    updateQuestionnaire,
-    removeQuestionnaire
-} from '../redux/actions/Questionnaire';
-import {ParticipantProgressPanel} from '../progressCharting';
-import {formatISO} from 'date-fns';
+import { updateQuestionnaire, removeQuestionnaire } from '../redux/actions/Questionnaire';
+import { ParticipantProgressPanel } from '../progressCharting';
+import { formatISO } from 'date-fns';
 import LoadingScreen from '../layout/LoadingScreen';
-import {Questionnaire, Survey} from '../interfaces/DataTypes';
-import {RouteComponentProps} from 'react-router';
-import {PreviewButton, EditSaveCancelButton} from './components';
-import {routes} from '../utils/Constants';
-import {cloneDeep} from 'lodash';
+import { Questionnaire, Survey, User } from '../interfaces/DataTypes';
+import { RouteComponentProps } from 'react-router';
+import { PreviewButton, EditSaveCancelButton } from './components';
+import { routes } from '../utils/Constants';
+import { cloneDeep } from 'lodash';
+import { disableScheduledJobs } from '../redux/actions/Survey';
 
 interface StateProps {
     editing: boolean;
+    editingQuestions: boolean;
     value: number;
     displayData: any;
     failure: boolean;
@@ -68,6 +67,7 @@ interface ReduxProps extends RouteComponentProps {
     firebase: any;
     isLoading: boolean;
     removeQuestionnaireDispatch: Function;
+    disableScheduledJobsDispatch: Function;
     loggedIn: boolean;
 }
 
@@ -80,6 +80,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
         super(props);
         this.state = {
             editing: false,
+            editingQuestions: false,
             value: 0,
             displayData: <div />,
             failure: false,
@@ -101,7 +102,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
     }
 
     UNSAFE_componentWillMount() {
-        const {loggedIn} = this.props;
+        const { loggedIn } = this.props;
 
         if (!loggedIn) {
             this.props.history.push(routes.LOGIN);
@@ -109,7 +110,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
     }
 
     UNSAFE_componentWillReceiveProps(props: ReduxProps) {
-        let {editing} = this.state;
+        let { editing } = this.state;
         let questionnaire = cloneDeep(props.questionnaire);
         if (!editing) {
             this.setState({
@@ -121,31 +122,40 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
     }
 
     setShowAlert(bool: boolean, message: string = '') {
-        this.setState({showAlert: bool, alertMessage: message});
+        this.setState({ showAlert: bool, alertMessage: message });
     }
 
     sendNotificationToQuestionnaire = () => {
-        let {questionnaire} = this.props;
+        let { questionnaire } = this.props;
         let participants = questionnaire.participants;
-        let deviceTokens: any = [];
+        let org = questionnaire.org;
+        let deviceTokens: Array<string> = [];
         let promises: any = [];
-        if (!isEmptyObject(participants)) {
-            participants.forEach((elem: any) => {
+        let users: Array<User> = [];
+        if (!isEmptyObject(participants) && !questionnaire.public) {
+            participants.forEach((participantId: any) => {
                 let promise = new Promise<void>((resolve, reject) => {
-                    getUser(elem)
-                        .then((snapshot: any) => {
-                            if (snapshot.length > 0) {
-                                snapshot.forEach(function (doc: any) {
-                                    let data = doc.data;
-                                    if (!isEmptyObject(data.token))
-                                        deviceTokens.push(data.token);
-                                    resolve();
-                                });
+                    getParticipant(participantId)
+                        .then(function (doc: any) {
+                            let userId = doc.data.userId;
+                            if (userId) {
+                                getUserInfo(userId)
+                                    .then((userDoc: any) => {
+                                        let data = userDoc.data;
+                                        data.docId = userDoc.id;
+                                        users.push(data);
+                                        if (!isEmptyObject(data.token)) deviceTokens.push(data.token);
+                                        resolve();
+                                    })
+                                    .catch((err: any) => {
+                                        console.error(err);
+                                        resolve();
+                                    });
                             } else {
                                 resolve();
                             }
                         })
-                        .catch((e: any) => {
+                        .catch((err: any) => {
                             resolve();
                         });
                 });
@@ -158,8 +168,46 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                         'New Questionnaire Available',
                         `${questionnaire.name} opened.`,
                         formatISO(new Date()),
-                        participants,
-                        deviceTokens
+                        users,
+                        deviceTokens,
+                        org
+                    ).catch((e: any) => {
+                        console.error('Error in adding to inbox: ' + e);
+                    });
+                })
+                .catch((err: any) => {
+                    console.error(err);
+                });
+        }
+
+        if (!isEmptyObject(participants) && questionnaire.public) {
+            participants.forEach((participantId: any) => {
+                let promise = new Promise<void>((resolve, reject) => {
+                    getUserInfo(participantId)
+                        .then((doc: any) => {
+                            let data = doc.data;
+                            data.docId = doc.id;
+                            users.push(data);
+                            if (!isEmptyObject(data.token)) deviceTokens.push(data.token);
+                            resolve();
+                        })
+                        .catch((err: any) => {
+                            console.error(err);
+                            resolve();
+                        });
+                });
+                promises.push(promise);
+            });
+
+            Promise.all(promises)
+                .then((res) => {
+                    sendToInbox(
+                        'New Questionnaire Available',
+                        `${questionnaire.name} opened.`,
+                        formatISO(new Date()),
+                        users,
+                        deviceTokens,
+                        org
                     ).catch((e: any) => {
                         console.error('Error in adding to inbox: ' + e);
                     });
@@ -171,66 +219,58 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
     };
 
     handleChange = (e: any, val: number) => {
-        this.setState({value: val});
+        this.setState({ value: val });
     };
 
     edit = () => {
-        this.setState({editing: true});
+        this.setState({ editing: true });
     };
 
     save = () => {
-        let {questionnaire} = this.props;
+        let { questionnaire } = this.props;
         const questionnaireId = questionnaire.id;
 
-        let {name, shortDescription, description} = this.state;
+        let { name, shortDescription, description } = this.state;
         if (isEmptyObject(name)) name = questionnaire.name;
-        if (isEmptyObject(shortDescription))
-            shortDescription = questionnaire.shortDescription;
+        if (isEmptyObject(shortDescription)) shortDescription = questionnaire.shortDescription;
         if (isEmptyObject(description)) description = questionnaire.description;
 
-        if (
-            !isEmptyObject(name) &&
-            !isEmptyObject(shortDescription) &&
-            !isEmptyObject(description)
-        ) {
+        if (!isEmptyObject(name) && !isEmptyObject(shortDescription) && !isEmptyObject(description)) {
             questionnaire.name = name;
             questionnaire.shortDescription = shortDescription;
             questionnaire.description = description;
 
-            this.props.updateQuestionnaireDispatch(
-                questionnaireId,
-                questionnaire
-            );
+            this.props.updateQuestionnaireDispatch(questionnaireId, questionnaire);
         } else {
-            this.setState({failure: true});
+            this.setState({ failure: true });
         }
-        this.setState({editing: false});
+        this.setState({ editing: false });
     };
 
     cancel = () => {
-        this.setState({editing: false});
+        this.setState({ editing: false });
     };
 
     archive = () => {
-        this.setState({showArchiveAlert: true});
+        this.setState({ showArchiveAlert: true });
     };
 
     deleteAction = () => {
-        this.setState({showDeleteAlert: true});
+        this.setState({ showDeleteAlert: true });
     };
 
     openQuestionEditor = () => {
-        let {questionnaire} = this.props;
+        let { questionnaire } = this.props;
         const questionnaireId = questionnaire.id;
 
         this.props.history.push({
             pathname: routes.EDIT_QUESTIONS,
-            state: {questionnaireId: questionnaireId}
+            state: { questionnaireId: questionnaireId }
         });
     };
 
     openAddParticipant = () => {
-        let {questionnaire} = this.props;
+        let { questionnaire } = this.props;
         const questionnaireId = questionnaire.id;
 
         this.props.history.push({
@@ -251,32 +291,35 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
     };
 
     open = () => {
-        let {questionnaire, survey} = this.props;
-        let variables: any = [];
-        let questions = questionnaire.questions;
+        const { questionnaire, survey } = this.props;
+        const { editingQuestions } = this.state;
+        const variables: any = [];
+        const questions = questionnaire.questions;
         for (var question in questions) {
             variables.push(questions[question].variable);
         }
-        let findDuplicates = variables.filter((elem: any, index: number) => {
+        const findDuplicates = variables.filter((elem: any, index: number) => {
             return variables.indexOf(elem) !== index;
         });
 
-        if (findDuplicates.length > 0) {
+        if (editingQuestions) {
             this.setShowAlert(
                 true,
-                `Duplicate variable name: ${findDuplicates.toString()}`
+                'Unsaved changes to questions. Save all changes before opening this questionnaire.'
             );
+        } else if (findDuplicates.length > 0) {
+            this.setShowAlert(true, `Duplicate variable name: ${findDuplicates.toString()}`);
         } else if (variables.length === 0) {
             this.setShowAlert(true, 'No questions have been added.');
         } else if (!survey.open) {
             this.setShowAlert(true, 'Parent survey has not been opened.');
         } else {
-            this.setState({showOpenAlert: true});
+            this.setState({ showOpenAlert: true });
         }
     };
 
     close = () => {
-        this.setState({showCloseAlert: true});
+        this.setState({ showCloseAlert: true });
     };
 
     getOpenText = (open: boolean, locked: boolean) => {
@@ -285,10 +328,14 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
         else return 'Draft';
     };
 
+    setEditingQuestions = (bool: boolean) => {
+        this.setState({ editingQuestions: bool });
+    };
+
     render() {
-        let {questionnaire} = this.props;
+        const { questionnaire, survey } = this.props;
         const questionnaireId = questionnaire.id;
-        let {
+        const {
             value,
             showAlert,
             alertMessage,
@@ -303,48 +350,44 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
             editing
         } = this.state;
 
-        let locked = !isEmptyObject(questionnaire.locked)
-            ? questionnaire.locked
-            : false;
+        const locked = !isEmptyObject(questionnaire.locked) ? questionnaire.locked : false;
 
         return (
             <IonPage>
                 <AppHeader />
-                <IonContent className="ion-padding">
+                <IonContent className='ion-padding' aria-label={`Q13-Content-${guid()}`}>
                     {this.props.isLoading && (
                         <IonRow text-center>
-                            <IonCol size="12" style={{textAlign: 'center'}}>
+                            <IonCol size='12' style={{ textAlign: 'center' }}>
                                 <LoadingScreen />
                             </IonCol>
                         </IonRow>
                     )}
                     <IonRow>
                         <IonCol>
-                            <span style={{float: 'left'}}>
+                            <span style={{ float: 'left' }}>
                                 <IonButtons>
-                                    <IonBackButton
-                                        defaultHref={`/survey/${questionnaire.surveyId}`}
-                                    />
+                                    <IonBackButton defaultHref={`/survey/${questionnaire.surveyId}`} />
                                 </IonButtons>
                             </span>
                         </IonCol>
                         <IonCol>
-                            <IonText color="primary">
-                                <span style={{float: 'right'}}>
-                                    <IonButtons slot="end">
+                            <IonText color='primary'>
+                                <span style={{ float: 'right' }}>
+                                    <IonButtons slot='end'>
                                         <IonButton
                                             disabled={locked || editing}
-                                            color="primary"
-                                            fill="clear"
+                                            color='primary'
+                                            fill='clear'
                                             onClick={() => this.open()}>
-                                            Open
+                                            <b>Open</b>
                                         </IonButton>
                                         <IonButton
                                             disabled={!questionnaire.open}
-                                            color="secondary"
-                                            fill="clear"
+                                            color='secondary'
+                                            fill='clear'
                                             onClick={() => this.close()}>
-                                            Close
+                                            <b>Close</b>
                                         </IonButton>
                                         <PreviewButton />
                                         <EditSaveCancelButton
@@ -356,19 +399,15 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                                         />
                                         {locked && (
                                             <IonButton
-                                                color="danger"
+                                                color='danger'
                                                 onClick={() => this.archive()}
                                                 disabled={questionnaire.open}>
-                                                Archive
+                                                <b>Archive</b>
                                             </IonButton>
                                         )}
                                         {!locked && (
-                                            <IonButton
-                                                color="danger"
-                                                onClick={() =>
-                                                    this.deleteAction()
-                                                }>
-                                                Delete
+                                            <IonButton color='danger' onClick={() => this.deleteAction()}>
+                                                <b>Delete</b>
                                             </IonButton>
                                         )}
                                     </IonButtons>
@@ -379,12 +418,10 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                     <IonRow>
                         <IonCol>
                             <IonItem>
-                                <IonLabel color="primary">
-                                    Questionnaire Name
-                                </IonLabel>
+                                <IonLabel color='primary'>Questionnaire Name</IonLabel>
                                 <IonInput
-                                    id="questionnaire-name"
-                                    placeholder="Enter Input"
+                                    id='questionnaire-name'
+                                    placeholder='Enter Input'
                                     value={name}
                                     readonly={!editing}
                                     onIonInput={(e: any) => {
@@ -397,10 +434,10 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                         </IonCol>
                         <IonCol>
                             <IonItem>
-                                <IonLabel color="primary">Subtitle</IonLabel>
+                                <IonLabel color='primary'>Subtitle</IonLabel>
                                 <IonInput
-                                    id="questionnaire-subtitle"
-                                    placeholder="Questionnaire Subtitle"
+                                    id='questionnaire-subtitle'
+                                    placeholder='Questionnaire Subtitle'
                                     value={shortDescription}
                                     readonly={!editing}
                                     onIonInput={(e: any) => {
@@ -411,16 +448,14 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                                 />
                             </IonItem>
                         </IonCol>
-                        <IonCol>
+                        <IonCol
+                            style={{ backgroundColor: getColor(questionnaire.open, questionnaire.locked) }}>
                             <IonItem>
-                                <IonLabel color="primary">Status</IonLabel>
+                                <IonLabel color='primary'>Status</IonLabel>
                                 <IonInput
-                                    id="questionnaire-status"
-                                    placeholder="Questionnaire Status"
-                                    value={this.getOpenText(
-                                        questionnaire.open,
-                                        questionnaire.locked
-                                    )}
+                                    id='questionnaire-status'
+                                    placeholder='Questionnaire Status'
+                                    value={this.getOpenText(questionnaire.open, questionnaire.locked)}
                                     readonly={true}
                                 />
                             </IonItem>
@@ -429,11 +464,11 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                     <IonRow>
                         <IonCol>
                             <IonItem>
-                                <IonLabel color="primary">Description</IonLabel>
+                                <IonLabel color='primary'>Description</IonLabel>
                                 <IonTextarea
-                                    id="questionnaire-description"
+                                    id='questionnaire-description'
                                     rows={2}
-                                    placeholder="Questionnaire Description"
+                                    placeholder='Questionnaire Description'
                                     value={description}
                                     readonly={!editing}
                                     onIonChange={(e: any) => {
@@ -445,43 +480,36 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                             </IonItem>
                         </IonCol>
                     </IonRow>
-                    <AppBar
-                        style={{backgroundColor: '#007CBA'}}
-                        position="static">
-                        <Tabs
-                            value={value}
-                            onChange={this.handleChange}
-                            aria-label="q13 tabs">
-                            <Tab label="Questions" {...a11yProps(0)} />
-                            <Tab label="Respondents" {...a11yProps(1)} />
-                            <Tab label="Progress" {...a11yProps(2)} />
+                    <AppBar style={{ backgroundColor: '#007CBA' }} position='static'>
+                        <Tabs value={value} onChange={this.handleChange} aria-label='q13 tabs'>
+                            <Tab label='Questions' {...a11yProps(0)} />
+                            <Tab label='Respondents' {...a11yProps(1)} />
+                            <Tab label='Progress' {...a11yProps(2)} />
                         </Tabs>
                     </AppBar>
                     <TabPanel value={value} index={0}>
-                        <Reorder />
+                        <Reorder setEditingQuestions={this.setEditingQuestions} />
                     </TabPanel>
                     <TabPanel value={value} index={1}>
                         <Q13ParticipantList />
                     </TabPanel>
                     <TabPanel value={value} index={2}>
                         <ParticipantProgressPanel
-                            view="questionnaire"
+                            view='questionnaire'
                             questionnaireId={`${this.props.questionnaire.id}`}
                         />
                     </TabPanel>
-                    <IonFab vertical="bottom" horizontal="end" slot="fixed">
+                    <IonFab vertical='bottom' horizontal='end' slot='fixed'>
                         {value === 0 && (
-                            <IonFabButton
-                                disabled={locked}
-                                onClick={(e) => this.addClicked(e, value)}>
-                                <IonIcon icon={add} />
+                            <IonFabButton disabled={locked} onClick={(e) => this.addClicked(e, value)}>
+                                <IonIcon icon={add} title='Add' />
                             </IonFabButton>
                         )}
                         {value === 1 && (
                             <IonFabButton
                                 disabled={!questionnaire.open && locked}
                                 onClick={(e) => this.addClicked(e, value)}>
-                                <IonIcon icon={add} />
+                                <IonIcon icon={add} title='Add' />
                             </IonFabButton>
                         )}
                     </IonFab>
@@ -498,7 +526,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showOpenAlert}
                     onDidDismiss={() => {
-                        this.setState({showOpenAlert: false});
+                        this.setState({ showOpenAlert: false });
                     }}
                     header={'Open Questionnaire'}
                     message={
@@ -513,7 +541,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                         {
                             text: 'Yes',
                             handler: () => {
-                                this.setState({showNotificationAlert: true});
+                                this.setState({ showNotificationAlert: true });
                             }
                         }
                     ]}
@@ -521,7 +549,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showNotificationAlert}
                     onDidDismiss={() => {
-                        this.setState({showNotificationAlert: false});
+                        this.setState({ showNotificationAlert: false });
                     }}
                     header={'Send Notification'}
                     message={`Do you want to send a push notification and in-app message to all respondents associated with this questionnaire?`}
@@ -530,32 +558,26 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                             text: 'No',
                             cssClass: 'secondary',
                             handler: () => {
-                                this.props.updateQuestionnaireDispatch(
-                                    questionnaireId,
-                                    {
-                                        ...questionnaire,
-                                        ...{
-                                            open: true,
-                                            locked: true
-                                        }
+                                this.props.updateQuestionnaireDispatch(questionnaireId, {
+                                    ...questionnaire,
+                                    ...{
+                                        open: true,
+                                        locked: true
                                     }
-                                );
+                                });
                             }
                         },
                         {
                             text: 'Yes',
                             handler: () => {
                                 this.sendNotificationToQuestionnaire();
-                                this.props.updateQuestionnaireDispatch(
-                                    questionnaireId,
-                                    {
-                                        ...questionnaire,
-                                        ...{
-                                            open: true,
-                                            locked: true
-                                        }
+                                this.props.updateQuestionnaireDispatch(questionnaireId, {
+                                    ...questionnaire,
+                                    ...{
+                                        open: true,
+                                        locked: true
                                     }
-                                );
+                                });
                             }
                         }
                     ]}
@@ -563,7 +585,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showCloseAlert}
                     onDidDismiss={() => {
-                        this.setState({showCloseAlert: false});
+                        this.setState({ showCloseAlert: false });
                     }}
                     header={'Close Questionnaire'}
                     message={
@@ -578,10 +600,11 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                         {
                             text: 'Yes',
                             handler: () => {
-                                this.props.updateQuestionnaireDispatch(
-                                    questionnaireId,
-                                    {...questionnaire, ...{open: false}}
-                                );
+                                this.props.updateQuestionnaireDispatch(questionnaireId, {
+                                    ...questionnaire,
+                                    ...{ open: false }
+                                });
+                                this.props.disableScheduledJobsDispatch(questionnaireId, survey);
                             }
                         }
                     ]}
@@ -589,7 +612,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showArchiveAlert}
                     onDidDismiss={() => {
-                        this.setState({showArchiveAlert: false});
+                        this.setState({ showArchiveAlert: false });
                     }}
                     header={'Archive Questionnaire'}
                     message={`Are you sure you want to archive this questionnaire? The questionnaire's data will not be deleted, but you will no longer be able to access it.`}
@@ -604,16 +627,10 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                             handler: () => {
                                 questionnaire.archived = true;
                                 questionnaire.open = false;
-                                this.props.updateQuestionnaireDispatch(
-                                    questionnaireId,
-                                    questionnaire
-                                );
-                                this.props.removeQuestionnaireDispatch(
-                                    questionnaireId
-                                );
-                                this.props.history.push(
-                                    `${routes.SURVEY}/${questionnaire.surveyId}`
-                                );
+                                this.props.updateQuestionnaireDispatch(questionnaireId, questionnaire);
+                                this.props.disableScheduledJobsDispatch(questionnaireId, survey);
+                                this.props.removeQuestionnaireDispatch(questionnaireId);
+                                this.props.history.push(`${routes.SURVEY}/${questionnaire.surveyId}`);
                             }
                         }
                     ]}
@@ -621,7 +638,7 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                 <IonAlert
                     isOpen={showDeleteAlert}
                     onDidDismiss={() => {
-                        this.setState({showDeleteAlert: false});
+                        this.setState({ showDeleteAlert: false });
                     }}
                     header={'Delete Questionnaire'}
                     message={`Are you sure you want to delete this questionnaire? The questionnaire's data cannot be recovered.`}
@@ -636,12 +653,9 @@ class Q13Editor extends React.Component<ReduxProps, StateProps> {
                             handler: () => {
                                 deleteQuestionnaire(questionnaire.id)
                                     .then((res: any) => {
-                                        this.props.removeQuestionnaireDispatch(
-                                            questionnaire.id
-                                        );
-                                        this.props.history.push(
-                                            `/survey/${questionnaire.surveyId}`
-                                        );
+                                        this.props.disableScheduledJobsDispatch(questionnaireId, survey);
+                                        this.props.removeQuestionnaireDispatch(questionnaireId);
+                                        this.props.history.push(`/survey/${questionnaire.surveyId}`);
                                     })
                                     .catch((err) => {
                                         console.error(err);
@@ -663,12 +677,12 @@ function a11yProps(index: any) {
 }
 
 function TabPanel(props: TabPanelProps) {
-    const {children, value, index, ...other} = props;
+    const { children, value, index, ...other } = props;
 
     return (
         <Typography
-            component="div"
-            role="tabpanel"
+            component='div'
+            role='tabpanel'
             hidden={value !== index}
             id={`simple-tabpanel-${index}`}
             aria-labelledby={`simple-tab-${index}`}
@@ -690,14 +704,14 @@ function mapStateToProps(state: any) {
 
 function mapDispatchToProps(dispatch: any) {
     return {
-        updateQuestionnaireDispatch(
-            questionnaireId: string,
-            questionnaire: any
-        ) {
+        updateQuestionnaireDispatch(questionnaireId: string, questionnaire: any) {
             dispatch(updateQuestionnaire(questionnaireId, questionnaire));
         },
         removeQuestionnaireDispatch(questionnaireId: string) {
             dispatch(removeQuestionnaire(questionnaireId));
+        },
+        disableScheduledJobsDispatch(questionnaireId: string, survey: any) {
+            dispatch(disableScheduledJobs(questionnaireId, survey));
         }
     };
 }

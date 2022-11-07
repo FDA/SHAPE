@@ -1,13 +1,14 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
 import { Questionnaire,  } from "../interfaces";
 
 
-admin.initializeApp(functions.config().firebase, 'questionnaire');
+initializeApp(functions.config().firebase, 'questionnaire');
 
 export class QuestionnaireService {
-    db = admin.firestore();
+    db = getFirestore();
     collection = "questionnaire";
 
     private processQuestionnaires(questionnaireQuerySnapshot: any, callback: CallbackFunction) {
@@ -61,7 +62,7 @@ export class QuestionnaireService {
         if(org === "ALL") {
             let request = this.firestoreCollection(this.collection);
 
-            for (let q of query) {
+            for (const q of query) {
                 request = request.where(q.key, q.operator, q.value);
             }
             request
@@ -75,7 +76,7 @@ export class QuestionnaireService {
         } else {
             let request = this.firestoreCollection(this.collection);
 
-            for (let q of query) {
+            for (const q of query) {
                 request = request.where(q.key, q.operator, q.value);
             }
             request

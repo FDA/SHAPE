@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /errors/{document=**} {
+     allow create: if signedIn()
+     allow delete: if false
+    }
+    match /questionnaire/{questionnaireId}{
+      allow read: if signedIn()
+      allow read, create, update, delete: if isAdmin()
+    }
+    match /survey/{surveyId}{
+      allow read: if signedIn()
+      allow update: if signedIn() && resource.data.public == true
+      allow read, create, update, delete: if isAdmin()
+    }
+    match /informed-consent/{consentId}{
+      allow create: if signedIn()
+      allow read: if request.auth.uid == resource.data.userId || isAdmin()
+      allow update, delete: if false
+    }
+    match /participant/{participantId}{
+      allow read, update: if resource.data.public == true || isAdmin()
+      allow create, delete: if isAdmin()
+    }
+    match /participant-diary/{participantId}{
+      allow create: if signedIn()
+      allow read, update: if request.auth.uid == resource.data.userId
+      allow read: if isAdmin()
+      allow delete: if false
+    }
+    match /participant-response/{participantId}{
+      allow create: if signedIn()
+      allow read, update: if request.auth.uid == resource.data.userId || isAdmin()
+      allow delete: if false;
+    }
+    match /question/{questionId}{
+      allow read, create, update, delete: if isAdmin()
+    }
+    match /users/{userId}{
+      allow create: if true;
+      allow read, update: if request.auth.uid == userId || isAdmin()
+      allow delete: if false;
+    }
+    match /message/{messageId}{
+      allow read, create: if isAdmin()
+      allow delete, update: if false;
+    }
+    match /inbox/{participantId}{
+      allow read, update, delete: if request.auth.uid == resource.data.userId || isAdmin()
+      allow create: if isAdmin()
+    }
+    match /ehr/{participantId}{
+      allow create: if signedIn()
+      allow read, update: if request.auth.uid == resource.data.userId
+      allow create, read, update: if isAdmin()
+      allow delete: if false;
+    }
+    match /org/{orgId}{
+      allow create, read, update, delete: if isAdmin()
+      allow read: if true;
+    }
+  }
+}
+
+function isAdmin(){
+	return request.auth != null && request.auth.token.admin == true && (request.auth.token.org == resource.data.org || request.auth.token.org == request.resource.data.org || request.auth.token.org == "ALL")
+}
+
+function signedIn() {
+	return request.auth.uid != null;
+}

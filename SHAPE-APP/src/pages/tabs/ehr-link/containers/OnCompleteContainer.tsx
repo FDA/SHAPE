@@ -11,7 +11,7 @@ interface PassedProps {
 
 class OnCompleteContainer extends Component<PassedProps, {}> {
   render() {
-    let { ehr, patientSearchDispatch, loading } = this.props;
+    const { ehr, patientSearchDispatch, loading } = this.props;
     return (
       <OnComplete
         ehr={ehr}

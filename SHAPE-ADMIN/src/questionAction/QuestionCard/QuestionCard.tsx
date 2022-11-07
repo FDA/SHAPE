@@ -11,17 +11,17 @@ import {
     IonRow,
     IonGrid
 } from '@ionic/react';
-import {reorderTwoOutline} from 'ionicons/icons';
-import {isEmptyObject} from '../../utils/Utils';
-import {questionTypes} from '../../utils/Constants';
-import {QuestionnaireQuestionComponent} from '../../interfaces/Components';
-import React, {Component} from 'react';
+import { reorderTwoOutline } from 'ionicons/icons';
+import { isEmptyObject } from '../../utils/Utils';
+import { questionTypes } from '../../utils/Constants';
+import { QuestionnaireQuestionComponent } from '../../interfaces/Components';
+import React, { Component } from 'react';
 import EditSaveCancelButton from './EditSaveCancelButton';
 import BaseQuestion from './BaseQuestion';
 import ReorderCard from './ReorderCard';
 import InfoCardPalette from '../../questionType/InfoCardComponents/InfoCardPalette';
 import InfoCardDisplay from '../../questionType/InfoCardComponents/InfoCardDisplay';
-import {QuestionnaireQuestion, QuestionRule} from '../../interfaces/DataTypes';
+import { QuestionnaireQuestion, QuestionRule } from '../../interfaces/DataTypes';
 
 interface PassedProps {
     question: QuestionnaireQuestionComponent;
@@ -46,43 +46,43 @@ interface PassedProps {
 
 class QuestionCard extends Component<PassedProps, {}> {
     handleVariableChange = (event: any) => {
-        let {handleRowChange, question} = this.props;
+        let { handleRowChange, question } = this.props;
         let name = !isEmptyObject(question.name) ? question.name : question.id;
         handleRowChange(event, name);
     };
 
     storeSection = (index: number, updatedSectionObject: any) => {
-        let {handleSectionChange, question} = this.props;
-        let {sections} = question;
+        let { handleSectionChange, question } = this.props;
+        let { sections } = question;
         let name = !isEmptyObject(question.name) ? question.name : question.id;
         sections[index] = updatedSectionObject;
         handleSectionChange(sections, name);
     };
 
     storeSections = (sections: any) => {
-        let {handleSectionChange, question} = this.props;
+        let { handleSectionChange, question } = this.props;
         let name = !isEmptyObject(question.name) ? question.name : question.id;
         handleSectionChange(sections, name);
     };
 
     addSection = (newSectionObject: any) => {
-        let {handleSectionChange, question} = this.props;
-        let {sections} = question;
+        let { handleSectionChange, question } = this.props;
+        let { sections } = question;
         let name = !isEmptyObject(question.name) ? question.name : question.id;
         sections.push(newSectionObject);
         handleSectionChange(sections, name);
     };
 
     removeSection = (index: number) => {
-        let {handleSectionChange, question} = this.props;
-        let {sections} = question;
+        let { handleSectionChange, question } = this.props;
+        let { sections } = question;
         let name = !isEmptyObject(question.name) ? question.name : question.id;
         sections.splice(index, 1);
         handleSectionChange(sections, name);
     };
 
     onClick = (e: any) => {
-        let {handleChange} = this.props;
+        let { handleChange } = this.props;
         let {
             name,
             variable,
@@ -123,9 +123,7 @@ class QuestionCard extends Component<PassedProps, {}> {
                 question.required = required;
                 question.requiredMessage = rm;
                 question.rules = rules;
-                question.placeholder = !isEmptyObject(placeholder)
-                    ? placeholder
-                    : '';
+                question.placeholder = !isEmptyObject(placeholder) ? placeholder : '';
                 break;
             case questionTypes.DATETIME:
                 question.text = text;
@@ -208,9 +206,10 @@ class QuestionCard extends Component<PassedProps, {}> {
                 {
                     //question card on questionnaire
                     isEmptyObject(handleChange) && (
-                        <IonReorder slot="start">
+                        <IonReorder slot='start'>
                             <IonIcon
-                                style={{verticalAlign: 'middle'}}
+                                title='Reorder'
+                                style={{ verticalAlign: 'middle' }}
                                 icon={reorderTwoOutline}
                             />
                         </IonReorder>
@@ -219,14 +218,10 @@ class QuestionCard extends Component<PassedProps, {}> {
                 {
                     //question card on search and add
                     !isEmptyObject(handleChange) && (
-                        <IonCheckbox
-                            slot="start"
-                            value={name}
-                            onClick={(e: any) => this.onClick(e)}
-                        />
+                        <IonCheckbox slot='start' value={name} onClick={(e: any) => this.onClick(e)} />
                     )
                 }
-                <IonCard style={{width: '100%', zIndex: '9999'}}>
+                <IonCard style={{ width: '98%', zIndex: '9999' }}>
                     {reorder && (
                         <ReorderCard
                             editing={editing}
@@ -239,15 +234,15 @@ class QuestionCard extends Component<PassedProps, {}> {
                         <IonCardHeader>
                             <IonCardTitle>
                                 <IonRow>
-                                    <IonCol size="2">
+                                    <IonCol size='2'>
                                         <IonLabel
-                                            className="ion-text-wrap"
-                                            color="primary"
-                                            style={{fontSize: '12px'}}>
+                                            className='ion-text-wrap'
+                                            color='primary'
+                                            style={{ fontSize: '12px' }}>
                                             {type}
                                         </IonLabel>
                                     </IonCol>
-                                    <IonCol size="10">
+                                    <IonCol size='10'>
                                         {!reorder && (
                                             <EditSaveCancelButton
                                                 editing={editing}
@@ -288,31 +283,20 @@ class QuestionCard extends Component<PassedProps, {}> {
                                 {type === questionTypes.INFO && (
                                     <IonGrid>
                                         <IonRow>
-                                            <IonCol size="6">
+                                            <IonCol size='6'>
                                                 <InfoCardPalette
                                                     editing={editing}
                                                     variable={variable}
                                                     sections={sections}
-                                                    handleVariableChange={
-                                                        this
-                                                            .handleVariableChange
-                                                    }
-                                                    storeSection={
-                                                        this.storeSection
-                                                    }
-                                                    storeSections={
-                                                        this.storeSections
-                                                    }
-                                                    removeSection={
-                                                        this.removeSection
-                                                    }
+                                                    handleVariableChange={this.handleVariableChange}
+                                                    storeSection={this.storeSection}
+                                                    storeSections={this.storeSections}
+                                                    removeSection={this.removeSection}
                                                     addSection={this.addSection}
                                                 />
                                             </IonCol>
-                                            <IonCol size="6">
-                                                <InfoCardDisplay
-                                                    sections={sections}
-                                                />
+                                            <IonCol size='6'>
+                                                <InfoCardDisplay sections={sections} />
                                             </IonCol>
                                         </IonRow>
                                     </IonGrid>

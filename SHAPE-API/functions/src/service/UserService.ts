@@ -1,13 +1,13 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction } from "../interfaces/components";
 import {User} from "../interfaces";
 
-
-admin.initializeApp(functions.config().firebase, 'users');
+initializeApp(functions.config().firebase, 'users');
 
 export class UserService {
-    db = admin.firestore();
+    db = getFirestore();
     collection = "users";
 
     /* Only use this for testing with emulators. */
@@ -43,7 +43,7 @@ export class UserService {
                 })
         } else {
             this.db.collection(this.collection)
-                .where("org", "==", org)
+                .where("org", "array-contains", org)
                 .get()
                 .then((userQuerySnapshot: any) => {
                     this.processUsers(userQuerySnapshot, callback);
@@ -54,6 +54,7 @@ export class UserService {
         }
     }
 
+    //TODO: Fix this to work with participantId map
     public query(org: string, participantId: any, callback: CallbackFunction) {
         if(org === "ALL") {
             this.db.collection(this.collection)
@@ -87,7 +88,7 @@ export class UserService {
         if(org === "ALL") {
             let request = this.firestoreCollection(this.collection);
 
-            for (let q of query) {
+            for (const q of query) {
                 request = request.where(q.key, q.operator, q.value);
             }
             request
@@ -101,11 +102,11 @@ export class UserService {
         } else {
             let request = this.firestoreCollection(this.collection);
 
-            for (let q of query) {
+            for (const q of query) {
                 request = request.where(q.key, q.operator, q.value);
             }
             request
-                .where("org", "==", org)
+                .where("org", "array-contains", org)
                 .get()
                 .then((userSnapshot: any) => {
                     this.processUsers(userSnapshot, callback);
@@ -133,12 +134,13 @@ export class UserService {
                 if (!user.exists) {
                     callback(true, {id: query.userId, data: "Not Found", returned: user});
                 } else {
-                    let u = user.data();
-                    if(u!.org === org) {
+                    /*const u = user.data();
+                    if(u!.org === org) {// admins need to be able to fetch public user information
                         callback(false, {id: user.id, data: user.data()})
-                    } else {
+                    } else { 
                         callback(true, {id: query.userId, data: "Not Permitted", returned: {}});
-                    }
+                    }*/
+                    callback(false, {id: user.id, data: user.data()});
                 }
             }).catch((error) => {
                 console.error(error)
@@ -172,7 +174,7 @@ export class UserService {
                 if (!user.exists) {
                     callback(true, {id: data.id, data: "Not Found", returned: user});
                 } else {
-                    let u = user.data();
+                    const u = user.data();
                     if(u!.org === org) {
                         this.db.collection(this.collection).doc(data.id).set(data.user, {merge: true})
                         .then(() => {

@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import {connect} from 'react-redux';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import {
     IonItem,
     IonLabel,
@@ -12,12 +12,14 @@ import {
     IonListHeader,
     IonRow
 } from '@ionic/react';
-import {getParticipant, getUser} from '../utils/API';
-import {isEmptyObject} from '../utils/Utils';
-import {ParticipantProgress, SurveyProgress} from '.';
+import { getParticipant, getUserInfo } from '../utils/API';
+import { isEmptyObject } from '../utils/Utils';
+import { ParticipantProgress, SurveyProgress } from '.';
 import Loading from '../layout/Loading';
-import {Survey, Questionnaire, User} from '../interfaces/DataTypes';
-import {routes} from '../utils/Constants';
+import { Survey, Questionnaire, User } from '../interfaces/DataTypes';
+import { routes } from '../utils/Constants';
+import { storeQuestionnaire } from '../redux/actions/Questionnaire';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
 
 interface QObjectDataElement {
     id: string;
@@ -29,11 +31,12 @@ interface QObject {
     data: Array<QObjectDataElement>;
 }
 
-interface Props {
+interface Props extends RouteComponentProps {
     survey: Survey;
     questionnaireId?: string;
     questionnaire: Questionnaire;
     view: string;
+    storeQuestionnaireDispatch: Function;
 }
 
 interface State {
@@ -73,7 +76,7 @@ class ParticipantProgressPanel extends Component<Props, State> {
 
     componentDidMount() {
         this._isMounted = true;
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         this.loadParticipants();
     }
 
@@ -82,7 +85,7 @@ class ParticipantProgressPanel extends Component<Props, State> {
     }
 
     setQuestionnaireStatus = (flag: QObjectKey, data: QObject) => {
-        if(this._isMounted){
+        if (this._isMounted) {
             //@ts-ignore
             this.setState({
                 [flag]: [data, ...this.state[flag]]
@@ -109,63 +112,91 @@ class ParticipantProgressPanel extends Component<Props, State> {
     loadParticipants = () => {
         const parent = this;
         let participantList: User[] = [];
-        let {survey} = this.props;
+        let { survey } = this.props;
 
-        let participants = !isEmptyObject(survey.participants)
-            ? survey.participants
-            : [];
-        let promises = participants.map((participantId: string) => {
-            return new Promise((resolve) => {
-                getParticipant(participantId)
-                    .then(function (doc: any) {
-                        let tempDoc = doc.data;
-                        tempDoc.id = doc.id;
-                        getUser(participantId)
-                            .then((snapshot: any) => {
-                                if (snapshot.length > 0) {
-                                    snapshot.forEach(function (snap: any) {
-                                        tempDoc.active = snap.data.active;
+        let participants = !isEmptyObject(survey.participants) ? survey.participants : [];
+        if (survey.public) {
+            let promises = participants.map((participantId: string) => {
+                return new Promise<void>((resolve) => {
+                    let tempDoc: any = { participantId: participantId };
+                    getUserInfo(participantId)
+                        .then((doc: any) => {
+                            tempDoc.active = doc.data.active;
+                            tempDoc.created = true;
+                            participantList.push(tempDoc);
+                            resolve();
+                        })
+                        .catch(() => {
+                            resolve();
+                        });
+                });
+            });
+
+            Promise.all(promises)
+                .then((res) => {
+                    if (parent._isMounted) {
+                        parent.setState({
+                            participantList: [...participantList].sort((p1: any, p2: any) =>
+                                p1.participantId > p2.participantId ? 1 : -1
+                            ),
+                            isLoading: false
+                        });
+                    }
+                })
+                .catch((err: any) => {
+                    console.error(err);
+                });
+        } else {
+            let promises = participants.map((participantId: string) => {
+                return new Promise<void>((resolve) => {
+                    getParticipant(participantId)
+                        .then(function (doc: any) {
+                            let userId = doc.data.userId;
+                            let tempDoc: any = { participantId: participantId };
+                            if (userId) {
+                                getUserInfo(userId)
+                                    .then((userDoc: any) => {
+                                        tempDoc.active = userDoc.data.active;
                                         tempDoc.created = true;
                                         participantList.push(tempDoc);
                                         resolve();
+                                    })
+                                    .catch(() => {
+                                        resolve();
                                     });
-                                } else {
-                                    tempDoc.created = false;
-                                    participantList.push(tempDoc);
-                                    resolve();
-                                }
-                            })
-                            .catch(() => {
+                            } else {
+                                participantList.push(tempDoc);
                                 resolve();
-                            });
-                    })
-                    .catch((err: any) => {
-                        console.error(err);
-                    });
+                            }
+                        })
+                        .catch((err: any) => {
+                            console.error(err);
+                        });
+                });
             });
-        });
 
-        Promise.all(promises)
-            .then((res) => {
-                if(parent._isMounted){
-                    parent.setState({
-                        participantList: participantList,
-                        isLoading: false
-                    });
-                }
-            })
-            .catch((err: any) => {
-                console.error(err);
-            });
+            Promise.all(promises)
+                .then((res) => {
+                    if (parent._isMounted) {
+                        parent.setState({
+                            participantList: [...participantList].sort((p1: any, p2: any) =>
+                                p1.participantId > p2.participantId ? 1 : -1
+                            ),
+                            isLoading: false
+                        });
+                    }
+                })
+                .catch((err: any) => {
+                    console.error(err);
+                });
+        }
     };
 
     getCompletedQs = (participantId: string) => {
         let result: Array<QObjectDataElement> = [];
-        let match = this.state.completedQs.find(
-            (e: QObject) => e.participantId === participantId
-        );
+        let match = this.state.completedQs.find((e: QObject) => e.participantId === participantId);
 
-        let {survey} = this.props;
+        let { survey, storeQuestionnaireDispatch } = this.props;
         let surveyId = survey.id;
 
         if (match) {
@@ -176,8 +207,12 @@ class ParticipantProgressPanel extends Component<Props, State> {
                 {result.map((e: QObjectDataElement) => {
                     return (
                         <IonItem
+                            button
                             key={`${participantId}-${e.id}`}
-                            routerLink={`${routes.SURVEY}/${surveyId}/questionnaire/${e.id}`}>
+                            onClick={() => {
+                                storeQuestionnaireDispatch(e.id);
+                                this.props.history.push(`${routes.SURVEY}/${surveyId}/questionnaire/${e.id}`);
+                            }}>
                             {`${e.name}`}
                         </IonItem>
                     );
@@ -189,13 +224,11 @@ class ParticipantProgressPanel extends Component<Props, State> {
     getInProgressQs = (participantId: string) => {
         let result: Array<QObjectDataElement> = [];
 
-        let match = this.state.inProgressQs.find(
-            (e: QObject) => e.participantId === participantId
-        );
+        let match = this.state.inProgressQs.find((e: QObject) => e.participantId === participantId);
         if (match) {
             result = match.data;
         }
-        let {survey} = this.props;
+        let { survey, storeQuestionnaireDispatch } = this.props;
         let surveyId = survey.id;
 
         return (
@@ -203,8 +236,12 @@ class ParticipantProgressPanel extends Component<Props, State> {
                 {result.map((e: QObjectDataElement) => {
                     return (
                         <IonItem
+                            button
                             key={`${participantId}-${e.id}`}
-                            routerLink={`${routes.SURVEY}/${surveyId}/questionnaire/${e.id}`}>
+                            onClick={() => {
+                                storeQuestionnaireDispatch(e.id);
+                                this.props.history.push(`${routes.SURVEY}/${surveyId}/questionnaire/${e.id}`);
+                            }}>
                             {`${e.name}`}
                         </IonItem>
                     );
@@ -216,21 +253,23 @@ class ParticipantProgressPanel extends Component<Props, State> {
     getNotStartedQs = (participantId: string) => {
         let result: Array<QObjectDataElement> = [];
 
-        let match = this.state.notStartedQs.find(
-            (e: QObject) => e.participantId === participantId
-        );
+        let match = this.state.notStartedQs.find((e: QObject) => e.participantId === participantId);
         if (match) {
             result = match.data;
         }
-        let {survey} = this.props;
+        let { survey, storeQuestionnaireDispatch } = this.props;
         let surveyId = survey.id;
         return (
             <IonList>
                 {result.map((e: QObjectDataElement) => {
                     return (
                         <IonItem
+                            button
                             key={`${participantId}-${e.id}`}
-                            routerLink={`${routes.SURVEY}/${surveyId}/questionnaire/${e.id}`}>
+                            onClick={() => {
+                                storeQuestionnaireDispatch(e.id);
+                                this.props.history.push(`${routes.SURVEY}/${surveyId}/questionnaire/${e.id}`);
+                            }}>
                             {`${e.name}`}
                         </IonItem>
                     );
@@ -241,64 +280,51 @@ class ParticipantProgressPanel extends Component<Props, State> {
 
     getIndividualStatus = (participantId: string) => {
         let result = 'Not Started';
-        let match = this.state.inProgressQs.find(
-            (e: QObject) => e.participantId === participantId
-        );
-        let {questionnaireId} = this.props;
+        let match = this.state.inProgressQs.find((e: QObject) => e.participantId === participantId);
+        let { questionnaireId } = this.props;
         if (match) {
-            let temp = match.data.find(
-                (e: QObjectDataElement) => e.id === questionnaireId
-            );
+            let temp = match.data.find((e: QObjectDataElement) => e.id === questionnaireId);
             if (temp) return 'In Progress';
         }
-        match = this.state.completedQs.find(
-            (e: QObject) => e.participantId === participantId
-        );
+        match = this.state.completedQs.find((e: QObject) => e.participantId === participantId);
         if (match) {
-            let temp = match.data.find(
-                (e: QObjectDataElement) => e.id === questionnaireId
-            );
+            let temp = match.data.find((e: QObjectDataElement) => e.id === questionnaireId);
             if (temp) return 'Completed';
         }
         return result;
     };
 
     getQuestionnaireView = () => {
-        let {participantList, isLoading} = this.state;
+        let { participantList, isLoading } = this.state;
 
         return (
-            <>
+            <div key='questionnaire-view'>
                 <IonList>
-                    <IonItem color="light">
-                        <IonCol size="4">
+                    <IonItem color='light' key='header'>
+                        <IonCol size='4'>
                             <IonLabel>Respondent</IonLabel>
                         </IonCol>
-                        <IonCol size="2">
+                        <IonCol size='2'>
                             <IonLabel>Status</IonLabel>
                         </IonCol>
                     </IonItem>
                     {isLoading && (
                         <IonRow text-center>
-                            <IonCol size="12" style={{textAlign: 'center'}}>
+                            <IonCol size='12' style={{ textAlign: 'center' }}>
                                 <Loading />
                             </IonCol>
                         </IonRow>
                     )}
                     {participantList
                         .filter((participant: any) => {
-                            return !isEmptyObject(
-                                this.props.questionnaire.participants
-                            )
-                                ? this.props.questionnaire.participants.indexOf(
-                                      participant.participantId
-                                  ) > -1
+                            return !isEmptyObject(this.props.questionnaire.participants)
+                                ? this.props.questionnaire.participants.indexOf(participant.participantId) >
+                                      -1
                                 : false;
                         })
                         .map((participant: any) => {
-                            let {id, participantId} = participant;
-                            let status = this.getIndividualStatus(
-                                participantId
-                            );
+                            let { participantId } = participant;
+                            let status = this.getIndividualStatus(participantId);
                             let statusColor = '';
 
                             switch (status) {
@@ -314,11 +340,11 @@ class ParticipantProgressPanel extends Component<Props, State> {
                             }
 
                             return (
-                                <IonItem key={id}>
-                                    <IonCol size="4">
+                                <IonItem key={participantId}>
+                                    <IonCol size='4'>
                                         <IonLabel>{participantId}</IonLabel>
                                     </IonCol>
-                                    <IonCol size="2">
+                                    <IonCol size='2'>
                                         {status}
                                         <div
                                             style={{
@@ -332,15 +358,11 @@ class ParticipantProgressPanel extends Component<Props, State> {
                                             &nbsp;
                                         </div>
                                     </IonCol>
-                                    <IonCol size="0">
+                                    <IonCol size='0'>
                                         <ParticipantProgress
                                             participantId={participantId}
-                                            setQuestionnaireStatus={
-                                                this.setQuestionnaireStatus
-                                            }
-                                            setAllCompleted={
-                                                this.setAllCompleted
-                                            }
+                                            setQuestionnaireStatus={this.setQuestionnaireStatus}
+                                            setAllCompleted={this.setAllCompleted}
                                             setNoneStarted={this.setNoneStarted}
                                             setInProgress={this.setInProgress}
                                         />
@@ -349,13 +371,13 @@ class ParticipantProgressPanel extends Component<Props, State> {
                             );
                         })}
                 </IonList>
-            </>
+            </div>
         );
     };
 
     render() {
-        let {participantList} = this.state;
-        let {view} = this.props;
+        let { participantList } = this.state;
+        let { view } = this.props;
 
         if (view === 'questionnaire') {
             return this.getQuestionnaireView();
@@ -380,69 +402,44 @@ class ParticipantProgressPanel extends Component<Props, State> {
                         </IonCardHeader>
                         <IonCardContent>
                             <IonList>
-                                <IonListHeader color="light">
-                                    <IonCol size="1">
+                                <IonListHeader color='light'>
+                                    <IonCol size='1'>
                                         <IonLabel>Respondent</IonLabel>
                                     </IonCol>
-                                    <IonCol size="5">
+                                    <IonCol size='5'>
                                         <IonLabel>Progress</IonLabel>
                                     </IonCol>
-                                    <IonCol size="2">
+                                    <IonCol size='2'>
                                         <IonLabel>Completed</IonLabel>
                                     </IonCol>
-                                    <IonCol size="2">
+                                    <IonCol size='2'>
                                         <IonLabel>In Progress</IonLabel>
                                     </IonCol>
-                                    <IonCol size="2">
+                                    <IonCol size='2'>
                                         <IonLabel>Not Started</IonLabel>
                                     </IonCol>
                                 </IonListHeader>
                                 {participantList.map((participant: any) => {
-                                    let {id, participantId} = participant;
+                                    let { participantId } = participant;
                                     return (
-                                        <IonItem key={id}>
-                                            <IonCol size="1">
-                                                <IonLabel>
-                                                    {participantId}
-                                                </IonLabel>
+                                        <IonItem key={participantId}>
+                                            <IonCol size='1'>
+                                                <IonLabel>{participantId}</IonLabel>
                                             </IonCol>
-                                            <IonCol size="5">
+                                            <IonCol size='5'>
                                                 <ParticipantProgress
-                                                    participantId={
-                                                        participantId
-                                                    }
-                                                    setQuestionnaireStatus={
-                                                        this
-                                                            .setQuestionnaireStatus
-                                                    }
-                                                    setAllCompleted={
-                                                        this.setAllCompleted
-                                                    }
-                                                    setNoneStarted={
-                                                        this.setNoneStarted
-                                                    }
-                                                    setInProgress={
-                                                        this.setInProgress
-                                                    }
+                                                    participantId={participantId}
+                                                    setQuestionnaireStatus={this.setQuestionnaireStatus}
+                                                    setAllCompleted={this.setAllCompleted}
+                                                    setNoneStarted={this.setNoneStarted}
+                                                    setInProgress={this.setInProgress}
                                                 />
                                             </IonCol>
-                                            <IonCol size="2">
-                                                <IonLabel>
-                                                    {this.getCompletedQs(
-                                                        participantId
-                                                    )}
-                                                </IonLabel>
+                                            <IonCol size='2'>
+                                                <IonLabel>{this.getCompletedQs(participantId)}</IonLabel>
                                             </IonCol>
-                                            <IonCol size="2">
-                                                {this.getInProgressQs(
-                                                    participantId
-                                                )}
-                                            </IonCol>
-                                            <IonCol size="2">
-                                                {this.getNotStartedQs(
-                                                    participantId
-                                                )}
-                                            </IonCol>
+                                            <IonCol size='2'>{this.getInProgressQs(participantId)}</IonCol>
+                                            <IonCol size='2'>{this.getNotStartedQs(participantId)}</IonCol>
                                         </IonItem>
                                     );
                                 })}
@@ -462,4 +459,12 @@ function mapStateToProps(state: any) {
     };
 }
 
-export default connect(mapStateToProps)(ParticipantProgressPanel);
+function mapDispatchToProps(dispatch: any) {
+    return {
+        storeQuestionnaireDispatch(questionnaireId: string) {
+            dispatch(storeQuestionnaire(questionnaireId));
+        }
+    };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(ParticipantProgressPanel));

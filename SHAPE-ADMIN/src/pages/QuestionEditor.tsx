@@ -12,11 +12,11 @@ import {
     IonMenu
 } from '@ionic/react';
 import React from 'react';
-import {withRouter, RouteComponentProps} from 'react-router-dom';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
 import AddSearch from '../questionAction/AddSearch';
 import NewQuestion from '../questionAction/NewQuestion';
-import {routes} from '../utils/Constants';
-import {connect} from 'react-redux';
+import { routes } from '../utils/Constants';
+import { connect } from 'react-redux';
 
 const views = {
     CREATE: 'create',
@@ -43,7 +43,7 @@ class QuestionEditor extends React.Component<ReduxProps, State> {
     }
 
     componentDidMount() {
-        const {loggedIn} = this.props;
+        const { loggedIn } = this.props;
 
         if (!loggedIn) {
             this.props.history.push(routes.LOGIN);
@@ -51,60 +51,55 @@ class QuestionEditor extends React.Component<ReduxProps, State> {
     }
 
     handleMenuChange(menuItem: string) {
-        this.setState({view: menuItem});
+        this.setState({ view: menuItem });
     }
 
     render() {
-        let {view} = this.state;
+        let { view } = this.state;
 
         return (
             <IonPage>
-                <IonHeader>
+                <IonHeader aria-label='Add Question'>
                     <IonToolbar>
-                        <IonButtons slot="start">
+                        <IonButtons slot='start'>
                             <IonBackButton defaultHref={routes.HOME} />
                         </IonButtons>
                         <IonTitle>Add Question</IonTitle>
                     </IonToolbar>
                 </IonHeader>
-                <IonContent>
-                    <IonSplitPane contentId="topLevel">
+                <IonContent aria-label='Container'>
+                    <IonSplitPane contentId='topLevel'>
                         <IonMenu
-                            type="overlay"
+                            type='overlay'
                             disabled={false}
-                            contentId="topLevel"
-                            style={{maxWidth: '200px'}}>
-                            <IonHeader>
+                            contentId='topLevel'
+                            style={{ maxWidth: '200px' }}>
+                            <IonHeader aria-label='Actions'>
                                 <IonToolbar>
                                     <IonTitle>Actions</IonTitle>
                                 </IonToolbar>
                             </IonHeader>
-                            <IonContent>
+                            <IonContent aria-label='Buttons'>
                                 <IonList>
                                     <IonItem
-                                        style={{cursor: 'pointer'}}
-                                        onClick={() =>
-                                            this.handleMenuChange(views.CREATE)
-                                        }>
+                                        button
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => this.handleMenuChange(views.CREATE)}>
                                         Create New
                                     </IonItem>
                                     <IonItem
-                                        style={{cursor: 'pointer'}}
-                                        onClick={() =>
-                                            this.handleMenuChange(
-                                                views.ADD_QUESTION
-                                            )
-                                        }>
+                                        button
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => this.handleMenuChange(views.ADD_QUESTION)}>
                                         Search and Add Questions
                                     </IonItem>
                                 </IonList>
                             </IonContent>
                         </IonMenu>
-                        <IonContent id="topLevel">
+                        <IonContent id='topLevel' aria-label='Content'>
                             {view === views.CREATE && <NewQuestion />}
                             {view === views.ADD_QUESTION && <AddSearch />}
-                            {view === views.QUESTION_LOGIC &&
-                                `Not yet implemented.`}
+                            {view === views.QUESTION_LOGIC && `Not yet implemented.`}
                         </IonContent>
                     </IonSplitPane>
                 </IonContent>

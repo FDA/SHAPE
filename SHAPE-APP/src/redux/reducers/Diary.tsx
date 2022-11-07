@@ -1,7 +1,7 @@
 import { SET_DIARY_AVAILABILITY, GET_DIARY_ENTRIES } from "../actions/types";
 import { Diary, DiaryResponse } from "../../interfaces/DataTypes";
 
-let initialAvailableDiaries: Array<Diary> = [];
+const initialAvailableDiaries: Array<Diary> = [];
 
 export function availableDiaries(
   state = initialAvailableDiaries,
@@ -17,11 +17,11 @@ export function availableDiaries(
 
 export function userDiaryEntries(
   state = [],
-  action: { type: string; data: Array<DiaryResponse> }
+  action: { type: string; diaries: Array<DiaryResponse> }
 ) {
   switch (action.type) {
     case GET_DIARY_ENTRIES:
-      return [...action.data];
+      return [...action.diaries];
     default:
       return state;
   }

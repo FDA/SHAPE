@@ -1,8 +1,9 @@
 import React, { Component } from "react";
 import { Redirect, Route, RouteComponentProps } from "react-router-dom";
-import { IonApp, IonRouterOutlet } from "@ionic/react";
+import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import firebase, { analytics } from "./config/fb";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAnalytics, setUserId } from "firebase/analytics";
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
 /* Basic CSS for apps built with Ionic */
@@ -22,6 +23,9 @@ import ChooseQuestionnaireContainer from "./pages/survey/containers/ChooseQuesti
 /* Theme variables */
 import "./theme/variables.css";
 import ParticipantLookupContainer from "./pages/authentication/containers/ParticipantLookupContainer";
+import AddParticipantsQueryContainer from "./pages/authentication/containers/AddParticipantsQueryContainer";
+import OrgLookupContainer from "./pages/authentication/containers/OrgLookupContainer";
+import PrivatePublicQueryContainer from "./pages/authentication/containers/PrivatePublicQueryContainer";
 import SecurityQuestionsContainer from "./pages/authentication/containers/SecurityQuestionsContainer";
 import PasswordResetContainer from "./pages/authentication/containers/PasswordResetContainer";
 import AuthActionPageContainer from "./pages/authentication/containers/AuthActionPageContainer";
@@ -38,9 +42,14 @@ import AppUrlListener from "./AppUrlListener";
 import { FirebaseAuth } from "./interfaces/DataTypes";
 import { environments, routes } from "./utils/Constants";
 
+
 // To update the native build, do: <ios> <android>
 // ionic build && ionic capacitor sync ios && ionic capacitor open ios
 // > home > chooseQuestionnaire? surveyId > ChooseProfile? surveyId/q13Id > show questionnaire
+
+setupIonicReact({
+   // config?: IonicConfig
+})
 
 interface AppProps extends RouteComponentProps {
   setPreviewMode: Function;
@@ -81,27 +90,27 @@ class App extends Component<AppProps, AppState> {
 
     // Use matchMedia to check the user preference
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-
     this.toggleDarkTheme(prefersDark.matches);
-
     // Listen for changes to the prefers-color-scheme media query
     prefersDark.addEventListener("change", (mediaQuery) =>
       this.toggleDarkTheme(mediaQuery.matches)
     );
     this.props.setDarkMode(prefersDark.matches);
-    const self = this;
-
-    firebase.auth().onAuthStateChanged(function (user) {
+    
+    //firebase auth and analytics
+    const auth = getAuth();
+    const analytics = getAnalytics();
+    onAuthStateChanged(auth, (user: any) => {
       if (user) {
-        analytics.setUserId(user.uid);
+        setUserId(analytics, user.uid);
         // User is signed in.
         if (process.env.NODE_ENV === environments.DEVELOPMENT)
           console.log(`Firebase user login (App.tsx)`);
-        self.setState({ firebaseLoggedIn: true });
+        this.setState({ firebaseLoggedIn: true });
       } else {
         if (process.env.NODE_ENV === environments.DEVELOPMENT)
           console.log("Firebase user logged out (App.tsx)");
-        self.setState({ firebaseLoggedIn: false });
+        this.setState({ firebaseLoggedIn: false });
       }
     });
   }
@@ -182,7 +191,7 @@ class App extends Component<AppProps, AppState> {
                   />
                   <Route
                     path={routes.TABS}
-                    component={() => (
+                    render={() => (
                       <TabsContainer
                         history={history}
                         location={location}
@@ -198,8 +207,23 @@ class App extends Component<AppProps, AppState> {
                     exact={true}
                   />
                   <Route
+                    path={routes.PUBLIC_PRIVATE_QUERY}
+                    component={PrivatePublicQueryContainer}
+                    exact={true}
+                  />
+                  <Route
+                    path={routes.ADD_PARTICIPANTS_QUERY}
+                    component={AddParticipantsQueryContainer}
+                    exact={true}
+                  />
+                  <Route
                     path={routes.PARTICIPANT_QUERY}
                     component={ParticipantLookupContainer}
+                    exact={true}
+                  />
+                  <Route
+                    path={routes.ORG_QUERY}
+                    component={OrgLookupContainer}
                     exact={true}
                   />
                   <Route

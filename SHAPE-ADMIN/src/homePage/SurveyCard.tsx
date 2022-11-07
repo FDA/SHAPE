@@ -7,21 +7,21 @@ import {
     IonLabel,
     IonText
 } from '@ionic/react';
-import React, {Component} from 'react';
-import {RouteComponentProps, withRouter} from 'react-router-dom';
-import {connect} from 'react-redux';
-import {isEmptyObject} from '../utils/Utils';
-import {format} from 'date-fns';
-import {storeQuestionnaireList} from '../redux/actions/Questionnaire';
-import {storeSurvey} from '../redux/actions/Survey';
-import {Survey, User} from '../interfaces/DataTypes';
-import {routes, dateFormats} from '../utils/Constants';
+import React, { Component } from 'react';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { isEmptyObject, getColor } from '../utils/Utils';
+import { format } from 'date-fns';
+import { storeQuestionnaireList } from '../redux/actions/Questionnaire';
+import { storeSurvey } from '../redux/actions/Survey';
+import { Survey, AdminUser } from '../interfaces/DataTypes';
+import { routes, dateFormats } from '../utils/Constants';
 
 interface ReduxProps {
     survey: Survey;
     storeQuestionnaireListDispatch: Function;
     storeSurveyDispatch: Function;
-    profile: User;
+    profile: AdminUser;
 }
 
 interface SurveyCardProps {
@@ -30,12 +30,9 @@ interface SurveyCardProps {
     error: boolean;
 }
 
-class SurveyCard extends Component<
-    ReduxProps & RouteComponentProps,
-    SurveyCardProps
-> {
+class SurveyCard extends Component<ReduxProps & RouteComponentProps, SurveyCardProps> {
     openSurvey(surveyId: string) {
-        this.props.history.push({pathname: `${routes.SURVEY}/${surveyId}`});
+        this.props.history.push({ pathname: `${routes.SURVEY}/${surveyId}` });
         // store list of questionnaires in redux
         this.props.storeSurveyDispatch(surveyId);
         this.props.storeQuestionnaireListDispatch(surveyId);
@@ -53,33 +50,40 @@ class SurveyCard extends Component<
         else return 'Draft';
     }
 
+    getAccessText(pub: boolean) {
+        if (pub) return 'Public';
+        else return 'Private';
+    }
+
     render() {
-        const {survey, profile} = this.props;
+        const { survey, profile } = this.props;
         return (
-            <IonCard button={true} onClick={() => this.openSurvey(survey.id)}>
-                <IonCardHeader>
+            <IonCard
+                button={true}
+                aria-label={`Go to Survey ${survey.name}`}
+                onClick={() => this.openSurvey(survey.id)}>
+                <IonCardHeader style={{ backgroundColor: getColor(survey.open, survey.locked) }}>
                     <IonCardTitle>{survey.name}</IonCardTitle>
                     <IonCardSubtitle>{survey.shortDescription}</IonCardSubtitle>
                 </IonCardHeader>
-                <IonCardContent style={{padding: '16px'}}>
-                    <IonLabel color="primary">Status:</IonLabel>{' '}
-                    <IonText
-                        color={this.getTextColor(survey.open, survey.locked)}>
+                <IonCardContent style={{ padding: '16px' }}>
+                    <IonLabel color='primary'>Access:</IonLabel>{' '}
+                    <IonText>{this.getAccessText(survey.public)}</IonText>
+                    <br />
+                    <IonLabel color='primary'>Status:</IonLabel>{' '}
+                    <IonText color={this.getTextColor(survey.open, survey.locked)}>
                         {this.getOpenText(survey.open, survey.locked)}
                     </IonText>
                     <br />
-                    <IonLabel color="primary">Date Created: </IonLabel>
+                    <IonLabel color='primary'>Date Created: </IonLabel>
                     <IonText>
                         {!isEmptyObject(survey.dateCreated)
-                            ? format(
-                                  new Date(survey.dateCreated),
-                                  dateFormats.MMddyyZYYHHmmss
-                              )
+                            ? format(new Date(survey.dateCreated), dateFormats.MMddyyZYYHHmmss)
                             : 'N/A'}
                     </IonText>
                     {profile.org === 'ALL' && (
                         <p>
-                            <IonLabel color="primary">Organization: </IonLabel>
+                            <IonLabel color='primary'>Organization: </IonLabel>
                             <IonText>{survey.org}</IonText>
                         </p>
                     )}
@@ -107,7 +111,4 @@ function mapDispatchToProps(dispatch: any) {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withRouter(SurveyCard));
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(SurveyCard));

@@ -1,5 +1,5 @@
 import React from 'react';
-import {Redirect, RouteComponentProps} from 'react-router';
+import { Redirect, RouteComponentProps } from 'react-router';
 import {
     IonButton,
     IonCheckbox,
@@ -16,15 +16,15 @@ import {
     IonText
 } from '@ionic/react';
 import AppHeader from '../layout/AppHeader';
-import {add, arrowBackOutline} from 'ionicons/icons';
-import {connect} from 'react-redux';
-import {getAllOrgs, updateOrg} from '../utils/API';
-import {Org, User} from '../interfaces/DataTypes';
+import { add, arrowBackOutline } from 'ionicons/icons';
+import { connect } from 'react-redux';
+import { getAllOrgs, updateOrg } from '../utils/API';
+import { Org, AdminUser } from '../interfaces/DataTypes';
 import Loading from '../layout/Loading';
-import {routes} from '../utils/Constants';
+import { routes } from '../utils/Constants';
 
 interface Props extends RouteComponentProps {
-    profile: User;
+    profile: AdminUser;
 }
 
 interface State {
@@ -62,12 +62,12 @@ class OrgList extends React.Component<Props, State> {
     toggleEnabled = (org: Org) => {
         org.active = !org.active;
         updateOrg(org.docId, org);
-        this.getAllOrgs();
+        this.getOrgs();
     };
 
-    getAllOrgs = () => {
+    getOrgs = () => {
         let orgs: Org[] = [];
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         let parent = this;
         getAllOrgs().then(function (snapshot: any) {
             snapshot.forEach(function (doc: any) {
@@ -76,25 +76,25 @@ class OrgList extends React.Component<Props, State> {
                 if (org) {
                     orgs.push(org);
                 }
-                parent.setState({orgList: orgs, isLoading: false});
             });
+            parent.setState({ orgList: orgs, isLoading: false });
         });
     };
 
     UNSAFE_componentWillReceiveProps(nextProps: Readonly<Props>): void {
-        const refresh = nextProps.location.state.refresh;
-        if (refresh) {
-            this.getAllOrgs();
+        //@ts-ignore
+        if (nextProps.location.state?.refresh) {
+            this.getOrgs();
         }
     }
 
     componentDidMount(): void {
-        this.getAllOrgs();
+        this.getOrgs();
     }
 
     render() {
-        const {profile} = this.props;
-        const {isLoading, orgList} = this.state;
+        const { profile } = this.props;
+        const { isLoading, orgList } = this.state;
         const superUser = profile && profile.org && profile.org === 'ALL';
         // Guard route against admins that are not superuser
         if (!superUser) {
@@ -103,16 +103,16 @@ class OrgList extends React.Component<Props, State> {
         return (
             <IonPage>
                 <AppHeader />
-                <IonContent className="ion-padding">
+                <IonContent className='ion-padding'>
                     <IonRow>
                         <IonCol>
-                            <span style={{float: 'left'}}>
+                            <span style={{ float: 'left' }}>
                                 <IonFabButton
-                                    style={{'--box-shadow': 'none'}}
-                                    color="light"
-                                    size="small"
-                                    href="/home">
-                                    <IonIcon icon={arrowBackOutline}></IonIcon>
+                                    style={{ '--box-shadow': 'none' }}
+                                    color='light'
+                                    size='small'
+                                    href='/home'>
+                                    <IonIcon icon={arrowBackOutline} title='Back' />
                                 </IonFabButton>
                                 <h1>Manage Organizations</h1>
                             </span>
@@ -120,41 +120,37 @@ class OrgList extends React.Component<Props, State> {
                     </IonRow>
                     <IonRow>
                         <IonCol>
-                            <IonText className="ion-text-center">
-                                Manage Organizations
-                            </IonText>
+                            <IonText className='ion-text-center'>Manage Organizations</IonText>
                         </IonCol>
                     </IonRow>
                     <IonRow>
-                        <IonList style={{width: '100%'}}>
-                            <IonItem color="light">
-                                <IonCol size="2">
+                        <IonList style={{ width: '100%' }}>
+                            <IonItem color='light'>
+                                <IonCol size='2'>
                                     <IonLabel>Org ID</IonLabel>
                                 </IonCol>
-                                <IonCol size="2">
+                                <IonCol size='2'>
                                     <IonLabel>Org Name</IonLabel>
                                 </IonCol>
-                                <IonCol size="2">
+                                <IonCol size='2'>
                                     <IonLabel>Contact Name</IonLabel>
                                 </IonCol>
-                                <IonCol size="2">
+                                <IonCol size='2'>
                                     <IonLabel>Admin Email</IonLabel>
                                 </IonCol>
-                                <IonCol size="2">
+                                <IonCol size='2'>
                                     <IonLabel>Active</IonLabel>
                                 </IonCol>
-                                <IonCol size="1">
+                                <IonCol size='1'>
                                     <IonLabel>Toggle Active</IonLabel>
                                 </IonCol>
-                                <IonCol size="1">
+                                <IonCol size='1'>
                                     <IonLabel>Remove</IonLabel>
                                 </IonCol>
                             </IonItem>
                             {isLoading && (
                                 <IonRow text-center>
-                                    <IonCol
-                                        size="12"
-                                        style={{textAlign: 'center'}}>
+                                    <IonCol size='12' style={{ textAlign: 'center' }}>
                                         <Loading />
                                     </IonCol>
                                 </IonRow>
@@ -162,65 +158,55 @@ class OrgList extends React.Component<Props, State> {
                             {orgList.map((org: Org) => {
                                 return (
                                     <IonItem key={org.id}>
-                                        <IonCol size="2">
+                                        <IonCol size='2'>
                                             <IonLabel>{org.id}</IonLabel>
                                         </IonCol>
                                         <IonCol
-                                            size="2"
-                                            style={{cursor: 'pointer'}}
+                                            size='2'
+                                            style={{ cursor: 'pointer' }}
                                             onClick={() => {
                                                 this.handleRowClick(org);
                                             }}>
                                             <IonLabel>{org.name}</IonLabel>
                                         </IonCol>
-                                        <IonCol size="2">
-                                            <IonLabel>
-                                                {org.contactName}
-                                            </IonLabel>
+                                        <IonCol size='2'>
+                                            <IonLabel>{org.contactName}</IonLabel>
                                         </IonCol>
-                                        <IonCol size="2">
-                                            <IonLabel>
-                                                {org.adminEmail}
-                                            </IonLabel>
+                                        <IonCol size='2'>
+                                            <IonLabel>{org.adminEmail}</IonLabel>
                                         </IonCol>
-                                        <IonCol size="2">
+                                        <IonCol size='2'>
                                             <IonCheckbox
                                                 id={`${org.id}-cb`}
-                                                color="primary"
+                                                color='primary'
                                                 checked={org.active}
                                                 disabled={true}
                                             />
                                         </IonCol>
-                                        <IonCol size="1">
+                                        <IonCol size='1'>
                                             {org.active && (
                                                 <IonButton
-                                                    style={{width: '100px'}}
-                                                    expand="block"
-                                                    onClick={() =>
-                                                        this.toggleEnabled(org)
-                                                    }>
+                                                    style={{ width: '100px' }}
+                                                    expand='block'
+                                                    onClick={() => this.toggleEnabled(org)}>
                                                     Disable
                                                 </IonButton>
                                             )}
                                             {!org.active && (
                                                 <IonButton
-                                                    style={{width: '100px'}}
-                                                    expand="block"
-                                                    onClick={() =>
-                                                        this.toggleEnabled(org)
-                                                    }>
+                                                    style={{ width: '100px' }}
+                                                    expand='block'
+                                                    onClick={() => this.toggleEnabled(org)}>
                                                     Enable
                                                 </IonButton>
                                             )}
                                         </IonCol>
-                                        <IonCol size="1">
+                                        <IonCol size='1'>
                                             <IonButton
-                                                style={{width: '100px'}}
-                                                expand="block"
-                                                color="danger"
-                                                onClick={() =>
-                                                    alert('Not yet Implemented')
-                                                }>
+                                                style={{ width: '100px' }}
+                                                expand='block'
+                                                color='danger'
+                                                onClick={() => alert('Not yet Implemented')}>
                                                 Remove
                                             </IonButton>
                                         </IonCol>
@@ -229,9 +215,9 @@ class OrgList extends React.Component<Props, State> {
                             })}
                         </IonList>
                     </IonRow>
-                    <IonFab vertical="bottom" horizontal="end" slot="fixed">
+                    <IonFab vertical='bottom' horizontal='end' slot='fixed'>
                         <IonFabButton onClick={this.handleFABClick}>
-                            <IonIcon icon={add} />
+                            <IonIcon icon={add} title='Add' />
                         </IonFabButton>
                     </IonFab>
                 </IonContent>

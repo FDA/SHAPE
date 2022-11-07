@@ -36,7 +36,7 @@ interface PassedProps extends RouteComponentProps {
 
 class QuestionnairePreviewContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       fireBaseAuth,
       getOnePreviewQuestionnaireDispatch,
       resetQuestionnaireDispatch,

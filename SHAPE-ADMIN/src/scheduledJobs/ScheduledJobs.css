@@ -1,0 +1,40 @@
+.no-jobs-card {
+    text-align: center;
+}
+
+.job-status {
+    max-width: 90px;
+}
+
+.job-details {
+    padding-left: 22px;
+}
+
+.job-name {
+    width: 1400px;
+    padding-bottom: 26px;
+}
+
+.job-message {
+    width: 1400px;
+    padding-top: 12px;
+}
+
+.job-buttons {
+    padding-right: 12px;
+}
+
+.enable-click {
+    pointer-events: visible !important;
+}
+
+.summary-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.job-summary {
+    text-indent: 12px;
+    max-height: 70px;
+}

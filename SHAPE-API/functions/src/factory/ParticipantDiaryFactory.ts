@@ -10,7 +10,9 @@ export const participantDiaryFactory = (org: string, req: Request) => {
       surveyId: req.body.surveyId,
       participantId: req.body.participantId,
       org: org,
-      dateWritten: req.body.dateWritten
+      dateWritten: req.body.dateWritten,
+      userId: req.body.userId,
+      profileId: req.body.profileId,
    };
    switch (formType) {
       case "Health Event":

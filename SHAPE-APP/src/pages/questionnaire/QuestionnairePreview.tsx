@@ -66,8 +66,8 @@ class QuestionnairePreview extends Component<
 
   setupAuth = () => {
     //@ts-ignore
-    let { token } = this.props.match.params;
-    let decoded_token = JSON.parse(atob(token));
+    const { token } = this.props.match.params;
+    const decoded_token = JSON.parse(atob(token));
     return this.props.previewAuthentication(decoded_token);
   };
 
@@ -78,26 +78,25 @@ class QuestionnairePreview extends Component<
   }
 
   loadPreview = () => {
-    let self = this;
     //@ts-ignore
-    let { id, surveyId } = this.props.match.params;
-    let { questionnaireId } = this.state;
+    const { id, surveyId } = this.props.match.params;
+    const { questionnaireId } = this.state;
     //@ts-ignore
-    let { token } = this.props.match.params;
-    let decoded_token = JSON.parse(atob(token));
+    const { token } = this.props.match.params;
+    const decoded_token = JSON.parse(atob(token));
 
     this.props.getOnePreviewQuestionnaire(id, decoded_token);
     setTimeout(() => {
-      self.clearQuestionnaire();
-      self.setupEngine(surveyId, questionnaireId, id);
+      this.clearQuestionnaire();
+      this.setupEngine(surveyId, questionnaireId, id);
       this.setState({ isReady: true });
     }, 1000);
   };
 
   clearQuestionnaire = () => {
-    let { questionnaire } = this.props;
-    for (var key of Object.keys(questionnaire)) {
-      let entry = questionnaire[key];
+    const { questionnaire } = this.props;
+    for (const key of Object.keys(questionnaire)) {
+      const entry = questionnaire[key];
       switch (typeof entry) {
         case "number":
           questionnaire[key] = null;
@@ -106,7 +105,7 @@ class QuestionnairePreview extends Component<
           questionnaire[key] = "";
           break;
         case "object":
-          for (let current of entry) {
+          for (const current of entry) {
             if (typeof current === "object" && current !== null) {
               delete current["isChecked"];
             }
@@ -128,7 +127,7 @@ class QuestionnairePreview extends Component<
   };
 
   getValue = (direction: string) => {
-    var retVal = null;
+    let retVal = null;
     if (this.state) {
       const { engine } = this.state;
       const question =
@@ -151,7 +150,7 @@ class QuestionnairePreview extends Component<
   };
 
   completeQuestions = () => {
-    let w = window.open("", "_self");
+    const w = window.open("", "_self");
     if (w) {
       this.props.logout();
       w.close();
@@ -181,7 +180,7 @@ class QuestionnairePreview extends Component<
     return retVal;
   };
 
-  next = (e: any) => {
+  next = () => {
     if (!this.isValid()) {
       return;
     }
@@ -220,7 +219,7 @@ class QuestionnairePreview extends Component<
     const { engine } = this.state;
     const { questionnaire } = this.props;
     const questionData = engine.peekCurrentQuestion();
-    var currentAnswer = null;
+    let currentAnswer = null;
     if (questionnaire && questionData) {
       currentAnswer = questionnaire[questionData.name];
     }
@@ -230,16 +229,17 @@ class QuestionnairePreview extends Component<
 
   setupEngine = (surveyId: string, questionnaireId: string, id: string) => {
     this.setState({ completed: false, goHome: false });
-    const { questionnaire, selectedProfile } = this.props;
-    const { profile } = this.props;
-    const { participantId } = profile;
+    const { questionnaire, selectedProfile, fireBaseAuth } = this.props;
     const idx = this.props.questionnaires
       .map((q) => {
         return q.id;
       })
       .indexOf(questionnaireId);
-    let model = this.props.questionnaires[idx];
-    let engine = new QuestionEngine(
+    const model = this.props.questionnaires[idx];
+    const org = model.org;
+    const participantId = fireBaseAuth.uid;
+
+    const engine = new QuestionEngine(
       model,
       this.handleChange,
       this.clearValue,
@@ -257,7 +257,8 @@ class QuestionnairePreview extends Component<
       participantId,
       questionnaireId,
       selectedProfile,
-      id
+      id,
+      org
     );
     engine.context = context;
     engine.goToFirst();
@@ -294,7 +295,7 @@ class QuestionnairePreview extends Component<
             </IonButton>
           )}
           {hasNext && (
-            <IonButton expand="block" onClick={(e: any) => this.next(e)}>
+            <IonButton expand="block" onClick={this.next}>
               Next
             </IonButton>
           )}

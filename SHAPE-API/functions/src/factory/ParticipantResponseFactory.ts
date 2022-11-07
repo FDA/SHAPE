@@ -11,6 +11,8 @@ export const participantResponseFactory = (org:string, req: Request): Participan
         dateWritten: req.body.dateWritten,
         responses: req.body.responses,
         complete: req.body.complete,
-        org: org
+        org: org,
+        userId: req.body.userId,
+        profileId: req.body.profileId,
     }
 }

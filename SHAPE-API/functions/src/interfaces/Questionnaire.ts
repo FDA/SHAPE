@@ -12,5 +12,12 @@ export interface Questionnaire {
     locked?: boolean,
     participants?: Participant[],
     questions?: Question[],
-    org?: string
+    org?: string,
+    public?: boolean,
+    form?: AcForm
+}
+
+interface AcForm {
+   OID: string,
+   Name: string
 }

@@ -22,7 +22,7 @@ interface PassedProps extends RouteComponentProps {
 
 class LinkPatientEHRContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       ehr,
       selected,
       fetchPatientEHRDispatch,

@@ -1,25 +1,11 @@
 import React from 'react';
-
-import {
-    IonInput,
-    IonItem,
-    IonGrid,
-    IonRow,
-    IonCol,
-    IonIcon,
-    IonCard
-} from '@ionic/react';
-import {trash} from 'ionicons/icons';
+import { IonGrid, IonRow, IonCol, IonIcon, IonCard, IonCardContent, IonButton } from '@ionic/react';
+import { trash } from 'ionicons/icons';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import InputLabel from '@material-ui/core/InputLabel';
-import FormControl from '@material-ui/core/FormControl';
-import {
-    QuestionnaireQuestion,
-    QuestionChoice,
-    QuestionRule
-} from '../interfaces/DataTypes';
-import {questionTypes, dateFormats} from '../utils/Constants';
+import { QuestionnaireQuestion, QuestionChoice, QuestionRule, Questionnaire } from '../interfaces/DataTypes';
+import { questionTypes, dateFormats } from '../utils/Constants';
+import { Input } from '@material-ui/core';
 
 const FACTS: any = {
     currentValue: 'currentValue',
@@ -27,6 +13,33 @@ const FACTS: any = {
     age: 'profile.age'
 };
 
+interface AddToDropdownProps {
+    questionnaireId: string;
+    questionnaireList: Questionnaire[];
+    addTo: string;
+    setAddTo: Function;
+}
+
+export const AddToDropdown = (props: AddToDropdownProps) => {
+    const { questionnaireId, questionnaireList, addTo, setAddTo } = props;
+    return (
+        <Select
+            autoWidth
+            className='ruleSelect'
+            value={addTo ? addTo : ''}
+            onChange={(e: any) => setAddTo(e.target.value)}>
+            {questionnaireList
+                .filter((q: Questionnaire) => q.id !== questionnaireId)
+                .map((q: Questionnaire) => {
+                    return (
+                        <MenuItem key={`addTo-${q.id}`} value={q.id}>
+                            {q.name}
+                        </MenuItem>
+                    );
+                })}
+        </Select>
+    );
+};
 interface SkipToDropdownProps {
     questionList: Array<QuestionnaireQuestion>;
     skipTo: string;
@@ -35,36 +48,51 @@ interface SkipToDropdownProps {
 }
 
 export const SkipToDropdown = (props: SkipToDropdownProps) => {
-    let {questionList, skipTo, setSkipTo, questionId} = props;
-
-    let choices = questionList.filter(
-        (q: QuestionnaireQuestion) => q.name !== questionId
+    const { questionList, skipTo, setSkipTo, questionId } = props;
+    return (
+        <Select
+            autoWidth
+            className='ruleSelect'
+            value={skipTo ? skipTo : ''}
+            onChange={(e: any) => setSkipTo(e.target.value)}>
+            {questionList
+                .filter((q: QuestionnaireQuestion) => q.name !== questionId)
+                .map((q: QuestionnaireQuestion) => {
+                    return (
+                        <MenuItem key={`skipTo-${q.name}`} value={q.name}>
+                            {q.title}
+                        </MenuItem>
+                    );
+                })}
+        </Select>
     );
+};
+
+interface FactDropDownProps {
+    index: any;
+    currentValueOnly: boolean;
+    fact: any;
+    displayFact: Function;
+    setFact: Function;
+    facts: any;
+}
+
+export const FactDropdown = (props: FactDropDownProps) => {
+    const { index, fact, setFact, currentValueOnly, displayFact } = props;
+    let { facts } = props;
+    if (currentValueOnly) facts = { currentValue: 'currentValue' };
+    const keys = Object.keys(facts);
 
     return (
-        <IonItem>
-            <FormControl
-                style={{
-                    width: '100px'
-                }}>
-                <InputLabel>Skip To</InputLabel>
-                <Select
-                    value={skipTo}
-                    onChange={(e: any) => setSkipTo(e.target.value)}>
-                    {(function getSelect() {
-                        return choices.map((q: QuestionnaireQuestion) => {
-                            return (
-                                <MenuItem
-                                    key={`skipto-${q.name}`}
-                                    value={q.name}>
-                                    {q.title}
-                                </MenuItem>
-                            );
-                        });
-                    })()}
-                </Select>
-            </FormControl>
-        </IonItem>
+        <Select autoWidth className='ruleSelect' value={fact} onChange={(e: any) => setFact(e, index)}>
+            {keys.map((f: any, i: number) => {
+                return (
+                    <MenuItem key={i} value={facts[f]}>
+                        {displayFact(facts[f])}
+                    </MenuItem>
+                );
+            })}
+        </Select>
     );
 };
 
@@ -74,58 +102,53 @@ interface OperatorDropdownProps {
     index: number;
     questionType: string;
     fact: string;
+    displayOperator: Function;
 }
 
 export const OperatorDropdown = (props: OperatorDropdownProps) => {
-    let {operator, setExpression, index, questionType, fact} = props;
-    let operators = [
-        {value: 'greaterThan', symbol: '>'},
-        {value: 'lessThan', symbol: '<'},
-        {value: 'equals', symbol: '='},
-        {value: 'greaterThanOrEquals', symbol: '>='},
-        {value: 'lessThanOrEquals', symbol: '<='}
-    ];
-    if (questionType === questionTypes.CHECKBOXGROUP) {
+    const { operator, setExpression, index, questionType, fact, displayOperator } = props;
+    const allOperators = [FACTS.age, questionTypes.DATETIME, questionTypes.RANGE, questionTypes.SLIDER];
+    const onlyEquals = [FACTS.gender, questionTypes.RADIOGROUP, questionTypes.SELECT];
+    const onlyContains = [questionTypes.SINGLETEXT, questionTypes.TEXTAREA];
+    const containsAndEquals = [questionTypes.CHECKBOXGROUP];
+
+    let operators = [{ value: 'equals', symbol: '==' }];
+
+    if (onlyEquals.includes(fact)) {
+        operators = [{ value: 'equals', symbol: '==' }];
+    } else if (allOperators.includes(fact) || allOperators.includes(questionType)) {
         operators = [
-            {value: 'greaterThan', symbol: '>'},
-            {value: 'lessThan', symbol: '<'},
-            {value: 'contains', symbol: '='},
-            {value: 'greaterThanOrEquals', symbol: '>='},
-            {value: 'lessThanOrEquals', symbol: '<='}
+            { value: 'greaterThan', symbol: '>' },
+            { value: 'lessThan', symbol: '<' },
+            { value: 'equals', symbol: '==' },
+            { value: 'greaterThanOrEquals', symbol: '>=' },
+            { value: 'lessThanOrEquals', symbol: '<=' }
         ];
-    }
-    if (
-        (questionType === questionTypes.SINGLETEXT ||
-            questionType === questionTypes.TEXTAREA) &&
-        fact !== FACTS.age
-    ) {
-        operators = [{value: 'equals', symbol: '='}];
+    } else if (onlyEquals.includes(questionType)) {
+        operators = [{ value: 'equals', symbol: '==' }];
+    } else if (onlyContains.includes(questionType)) {
+        operators = [{ value: 'contains', symbol: '=' }];
+    } else if (containsAndEquals.includes(questionType)) {
+        operators = [
+            { value: 'contains', symbol: '=' },
+            { value: 'equals', symbol: '==' }
+        ];
     }
 
     return (
-        <IonItem>
-            <FormControl
-                style={{
-                    width: '100px'
-                }}>
-                <InputLabel id="operator-helper-label">Operator</InputLabel>
-                <Select
-                    labelId="operator-helper-label"
-                    id="operator-helper"
-                    value={operator}
-                    onChange={(e: any) =>
-                        setExpression(e, index, questionType)
-                    }>
-                    {operators.map((o: {value: string; symbol: string}) => {
-                        return (
-                            <MenuItem key={o.value} value={o.value}>
-                                {o.symbol}
-                            </MenuItem>
-                        );
-                    })}
-                </Select>
-            </FormControl>
-        </IonItem>
+        <Select
+            autoWidth
+            className='ruleSelect'
+            value={operator}
+            onChange={(e: any) => setExpression(e, index, questionType)}>
+            {operators.map((o: { value: string; symbol: string }) => {
+                return (
+                    <MenuItem key={o.value} value={o.value}>
+                        {displayOperator(o.value)}
+                    </MenuItem>
+                );
+            })}
+        </Select>
     );
 };
 
@@ -141,7 +164,7 @@ interface ChoicesInputProps {
 }
 
 export const ChoicesInput = (props: ChoicesInputProps) => {
-    let {
+    const {
         choices,
         answer,
         setAnswer,
@@ -151,16 +174,16 @@ export const ChoicesInput = (props: ChoicesInputProps) => {
         questionType,
         currentQuestion
     } = props;
-    let choiceList = choices ? choices : [];
-    let noDropdownTypes = [
+    const noDropdownTypes = [
         questionTypes.SINGLETEXT,
         questionTypes.TEXTAREA,
         questionTypes.SLIDER,
         questionTypes.RANGE,
         questionTypes.DATETIME
     ];
-
     let getChoicesDropdown = true;
+    let choiceList = choices ? choices : [];
+
     if (noDropdownTypes.includes(questionType)) {
         getChoicesDropdown = false;
     }
@@ -168,7 +191,7 @@ export const ChoicesInput = (props: ChoicesInputProps) => {
     if (fact === FACTS.age) {
         choiceList = [];
         for (var i = 1; i <= 100; i++) {
-            choiceList.push({order: 0, text: `${i}`, value: `${i}`});
+            choiceList.push({ order: 0, text: `${i}`, value: `${i}` });
         }
         getChoicesDropdown = true;
     }
@@ -176,12 +199,12 @@ export const ChoicesInput = (props: ChoicesInputProps) => {
         choiceList = [
             {
                 order: 0,
-                text: 'M',
+                text: 'male',
                 value: 'M'
             },
             {
                 order: 1,
-                text: 'F',
+                text: 'female',
                 value: 'F'
             }
         ];
@@ -189,68 +212,58 @@ export const ChoicesInput = (props: ChoicesInputProps) => {
     }
     if (getChoicesDropdown) {
         return (
-            <FormControl
-                style={{
-                    width: '100px'
-                }}>
-                <InputLabel id="select-helper-label">Choices</InputLabel>
-                <Select
-                    value={answer}
-                    onChange={(e: any) => setAnswer(e, index)}>
-                    {(function getSelect(selectChoices) {
-                        return selectChoices.map((c: any) => {
-                            return (
-                                <MenuItem
-                                    key={`choice-${c.value}`}
-                                    value={c.value}>
-                                    {c.value}
-                                </MenuItem>
-                            );
-                        });
-                    })(choiceList)}
-                </Select>
-            </FormControl>
+            <Select
+                autoWidth
+                className='ruleSelect'
+                value={answer}
+                onChange={(e: any) => setAnswer(e, index)}>
+                {choiceList.map((c: any) => {
+                    return (
+                        <MenuItem key={`choice-${c.value}`} value={c.value}>
+                            {c.value}
+                        </MenuItem>
+                    );
+                })}
+            </Select>
         );
     } else if (questionType === questionTypes.DATETIME) {
-        let type =
-            currentQuestion.format === dateFormats.MMMDDYYYY
-                ? 'datetime-local'
-                : 'date';
-
+        const type = currentQuestion.format === dateFormats.MMMDDYYYY ? 'datetime-local' : 'date';
         return (
-            <input
+            <Input
                 type={type}
-                id="answer-time"
-                name="answer-time"
+                id='answer-time'
+                name='answer-time'
                 value={answer}
                 onChange={(e: any) => setAnswer(e, index)}
             />
         );
-    } else if (
-        questionType === questionTypes.SINGLETEXT ||
-        questionType === questionTypes.TEXTAREA
-    ) {
+    } else if (questionType === questionTypes.SINGLETEXT || questionType === questionTypes.TEXTAREA) {
         return (
-            <IonInput
+            <Input
+                style={{ width: '450px' }}
                 value={answer}
-                type="text"
-                onIonChange={(e: any) => setAnswer(e, index)}
-            />
-        );
-    } else if (questionType === questionTypes.SLIDER) {
-        return (
-            <IonInput
-                value={answer}
-                type="number"
-                onIonChange={(e: any) => setNumericalAnswer(e, index)}
+                type='text'
+                onChange={(e: any) => setAnswer(e, index)}
             />
         );
     } else if (questionType === questionTypes.RANGE) {
         return (
-            <IonInput
+            <Input
+                inputProps={{ min: currentQuestion.min, max: currentQuestion.max }}
+                style={{ width: '70px', paddingLeft: '10px' }}
                 value={answer}
-                type="number"
-                onIonChange={(e: any) => setAnswer(e, index)}
+                type='number'
+                onChange={(e: any) => setAnswer(e, index)}
+            />
+        );
+    } else if (questionType === questionTypes.SLIDER) {
+        return (
+            <Input
+                inputProps={{ min: currentQuestion.options.min, max: currentQuestion.options.max }}
+                style={{ width: '70px', paddingLeft: '10px' }}
+                value={answer}
+                type='number'
+                onChange={(e: any) => setNumericalAnswer(e, index)}
             />
         );
     } else {
@@ -271,10 +284,12 @@ interface SingleEntryProps {
     questionList: any;
     index: number;
     questionType: string;
+    displayFact: Function;
+    displayOperator: Function;
 }
 
 export const SingleEntry = (props: SingleEntryProps) => {
-    let {
+    const {
         choices,
         questionId,
         ruleJson,
@@ -285,90 +300,70 @@ export const SingleEntry = (props: SingleEntryProps) => {
         questionList,
         index,
         deleteEntry,
-        questionType
+        questionType,
+        displayOperator,
+        displayFact
     } = props;
-    let {expression} = ruleJson;
-    let {operator, value, fact} = expression.entries[index];
-    let currentQuestion = questionList.find(
-        (q: QuestionnaireQuestion) => q.name === questionId
+    const { expression } = ruleJson;
+    const { operator, value, fact } = expression.entries[index];
+    const currentQuestion = questionList.find((q: QuestionnaireQuestion) => q.name === questionId);
+
+    const selectFact = (
+        <FactDropdown
+            setFact={setFact}
+            displayFact={displayFact}
+            currentValueOnly={ruleJson.addTo ? true : false}
+            fact={fact}
+            facts={FACTS}
+            index={index}
+        />
+    );
+
+    const selectOperator = (
+        <OperatorDropdown
+            fact={fact}
+            operator={operator}
+            setExpression={setExpression}
+            index={index}
+            questionType={questionType}
+            displayOperator={displayOperator}
+        />
+    );
+
+    const selectValue = (
+        <ChoicesInput
+            questionType={questionType}
+            choices={choices}
+            answer={value}
+            setNumericalAnswer={setNumericalAnswer}
+            setAnswer={setAnswer}
+            index={index}
+            fact={fact}
+            currentQuestion={currentQuestion}
+        />
     );
 
     return (
         <IonCard>
-            <IonGrid>
+            <IonCardContent>
                 <IonRow>
-                    <IonCol size="10">{`Entry: ${index}`}</IonCol>
-                    <IonCol size="2">
+                    <IonCol>
+                        {`condition ${index + 1} :`}&nbsp;&nbsp;
+                        {<strong>{selectFact}</strong>}&nbsp;&nbsp;
+                        {<strong>{selectOperator}</strong>}&nbsp;&nbsp;
+                        {<strong>{selectValue}</strong>}
+                    </IonCol>
+                    <IonButton fill='clear' color='medium' onClick={() => deleteEntry(ruleJson, index)}>
                         <IonIcon
                             icon={trash}
                             style={{
-                                paddingTop: '.5em',
                                 cursor: 'pointer',
                                 fontSize: '20px'
                             }}
-                            onClick={() => deleteEntry(ruleJson, index)}
                         />
-                    </IonCol>
+                    </IonButton>
                 </IonRow>
-                <IonRow>
-                    <IonCol size="6" class={'ruleCol'}>
-                        <IonItem>
-                            <FormControl>
-                                <InputLabel id="select-helper-label">
-                                    Fact
-                                </InputLabel>
-                                <Select
-                                    labelId="demo-simple-select-helper-label"
-                                    id="demo-simple-select-helper"
-                                    value={fact}
-                                    onChange={(e: any) => setFact(e, index)}>
-                                    {(function getFactsDropdown(facts) {
-                                        let res: any = [];
-                                        let keys = Object.keys(facts);
-                                        for (let i in keys) {
-                                            let key: any = keys[i];
-                                            let temp = (
-                                                <MenuItem
-                                                    key={key}
-                                                    value={facts[key]}>
-                                                    {key}
-                                                </MenuItem>
-                                            );
-                                            res.push(temp);
-                                        }
-                                        return res;
-                                    })(FACTS)}
-                                </Select>
-                            </FormControl>
-                        </IonItem>
-                    </IonCol>
-                    <IonCol size="6" class={'ruleCol'}>
-                        <OperatorDropdown
-                            fact={fact}
-                            operator={operator}
-                            setExpression={setExpression}
-                            index={index}
-                            questionType={questionType}
-                        />
-                    </IonCol>
-                </IonRow>
-                <IonRow>
-                    <IonCol size="12" class={'ruleCol'}>
-                        <IonItem>
-                            <ChoicesInput
-                                questionType={questionType}
-                                choices={choices}
-                                answer={value}
-                                setNumericalAnswer={setNumericalAnswer}
-                                setAnswer={setAnswer}
-                                index={index}
-                                fact={fact}
-                                currentQuestion={currentQuestion}
-                            />
-                        </IonItem>
-                    </IonCol>
-                </IonRow>
-            </IonGrid>
+            </IonCardContent>
         </IonCard>
     );
 };
@@ -376,23 +371,25 @@ export const SingleEntry = (props: SingleEntryProps) => {
 interface SingleEntryDisplayProps {
     ruleJson: QuestionRule;
     index: number;
-    getSymbol: Function;
+    displayOperator: Function;
+    displayFact: Function;
+    displayValue: Function;
 }
 
 export const SingleEntryDisplay = (props: SingleEntryDisplayProps) => {
-    let {ruleJson, index, getSymbol} = props;
+    const { ruleJson, index, displayOperator, displayFact, displayValue } = props;
+    const { expression } = ruleJson;
+    const { operator, value, fact } = expression.entries[index];
 
-    let {expression} = ruleJson;
-    let {operator, value, fact} = expression.entries[index];
     return (
         <IonGrid>
             <IonRow>
-                <IonCol size="2">{`Entry: ${index}`}</IonCol>
-                <IonCol size="3">{`Fact: ${fact}`}</IonCol>
-                <IonCol size="3">
-                    {`Operator: ${operator} (${getSymbol(operator)})`}
+                <IonCol>
+                    {`condition ${index + 1} :`}&nbsp;&nbsp;&nbsp;
+                    {<strong>{displayFact(fact)}</strong>}&nbsp;&nbsp;
+                    {<strong>{displayOperator(operator)}</strong>}&nbsp;&nbsp;
+                    {<strong>{displayValue(value)}</strong>}
                 </IonCol>
-                <IonCol size="4">{`Matching Value: ${value}`}</IonCol>
             </IonRow>
         </IonGrid>
     );

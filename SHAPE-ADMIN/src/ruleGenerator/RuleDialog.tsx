@@ -1,19 +1,15 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
-import {IonLabel} from '@ionic/react';
-import {Rule} from '../ruleGenerator';
-import {isEmptyObject} from '../utils/Utils';
-import {
-    QuestionRule,
-    QuestionnaireQuestion,
-    Options,
-    QuestionRuleEntry
-} from '../interfaces/DataTypes';
-import {questionTypes} from '../utils/Constants';
+import { IonIcon, IonItem, IonLabel } from '@ionic/react';
+import { Rule } from '../ruleGenerator';
+import { isEmptyObject } from '../utils/Utils';
+import { QuestionRule, QuestionnaireQuestion, Options, QuestionRuleEntry } from '../interfaces/DataTypes';
+import { questionTypes } from '../utils/Constants';
+import { addCircle } from 'ionicons/icons';
 
 interface Props {
     open: boolean;
@@ -28,15 +24,14 @@ interface Props {
     saveRule: Function;
     deleteEntry: Function;
     questionType: string;
-    min: string | number;
-    max: string | number;
+    min: string;
+    max: string;
     options: Options;
 }
 
 const RuleDialog = (props: Props) => {
     const [error, setError] = useState(false);
-
-    let {
+    const {
         open,
         handleClose,
         handleCancel,
@@ -54,35 +49,30 @@ const RuleDialog = (props: Props) => {
         options
     } = props;
 
-    function validate() {
+    const validate = () => {
+        const entries = ruleJson.expression.entries;
         let valid = true;
-        let entries = ruleJson.expression.entries;
         entries.forEach((elem: QuestionRuleEntry) => {
             if (
-                isEmptyObject(ruleJson.skipTo) ||
+                (isEmptyObject(ruleJson.skipTo) && isEmptyObject(ruleJson.addTo)) ||
                 isEmptyObject(elem.fact) ||
                 isEmptyObject(elem.operator) ||
                 isEmptyObject(elem.value)
-            )
+            ) {
                 valid = false;
-
-            if (elem.fact === 'currentValue') {
+            } else if (elem.fact === 'currentValue') {
                 if (questionType === questionTypes.RANGE) {
                     if (
-                        parseInt(elem.value as string) >
-                            parseInt(max as string) ||
+                        parseInt(elem.value as string) > parseInt(max as string) ||
                         parseInt(elem.value as string) < parseInt(min as string)
                     ) {
                         valid = false;
                     }
                 }
-
                 if (questionType === questionTypes.SLIDER) {
                     if (
-                        parseInt(elem.value as string) >
-                            parseInt(options.max as string) ||
-                        parseInt(elem.value as string) <
-                            parseInt(options.min as string)
+                        parseInt(elem.value as string) > parseInt(options.max as string) ||
+                        parseInt(elem.value as string) < parseInt(options.min as string)
                     ) {
                         valid = false;
                     }
@@ -90,24 +80,30 @@ const RuleDialog = (props: Props) => {
             }
         });
         return valid;
-    }
+    };
 
-    function handleDialogSave() {
-        let valid = validate();
+    const handleDialogSave = () => {
+        const valid = validate();
         if (valid) {
             saveRule();
             handleClose();
         } else {
             setError(true);
         }
-    }
+    };
+
+    const addEntry = () => {
+        let tempEntry = {
+            fact: 'currentValue',
+            operator: '',
+            value: ''
+        };
+        ruleJson.expression.entries.push(tempEntry);
+        updateRule(ruleJson);
+    };
 
     return (
-        <Dialog
-            open={open}
-            onClose={() => handleClose()}
-            fullWidth={true}
-            disableEscapeKeyDown={true}>
+        <Dialog open={open} onClose={(event, reason) => handleClose(reason)} maxWidth='md' fullWidth={true}>
             <DialogTitle>Rule Editor</DialogTitle>
             <DialogContent dividers>
                 <Rule
@@ -124,34 +120,25 @@ const RuleDialog = (props: Props) => {
                     saveRule={saveRule}
                     questionType={questionType}
                 />
-
-                <pre
-                    id="json"
-                    style={{
-                        marginLeft: '2vw',
-                        marginRight: '2vw',
-                        cursor: 'default',
-                        color: 'black',
-                        backgroundColor: '#BBBBBC',
-                        border: '2px solid #3E3E3F'
-                    }}>
-                    <code>{JSON.stringify(ruleJson, null, 2)}</code>
-                </pre>
+                <IonItem button style={{ width: '190px' }} lines='none' onClick={() => addEntry()}>
+                    <IonIcon
+                        icon={addCircle}
+                        style={{ cursor: 'pointer', paddingRight: '5px', paddingBottom: '5px' }}
+                    />
+                    <IonLabel style={{ cursor: 'pointer' }}>Add Condition</IonLabel>
+                </IonItem>
             </DialogContent>
             <DialogActions>
-                <Button autoFocus onClick={handleDialogSave} color="primary">
+                <Button onClick={handleDialogSave} color='primary'>
                     Save changes
                 </Button>
-                <Button
-                    autoFocus
-                    onClick={() => handleCancel()}
-                    color="primary">
+                <Button onClick={() => handleCancel()} color='primary'>
                     Cancel
                 </Button>
             </DialogActions>
             {error && (
-                <span style={{padding: '8px', textAlign: 'right'}}>
-                    <IonLabel color="danger">Invalid field.</IonLabel>
+                <span style={{ padding: '8px', textAlign: 'right' }}>
+                    <IonLabel color='danger'>Invalid field.</IonLabel>
                 </span>
             )}
         </Dialog>

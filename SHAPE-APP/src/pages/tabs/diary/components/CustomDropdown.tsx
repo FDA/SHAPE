@@ -17,7 +17,7 @@ import { diaryViews, routes } from "../../../../utils/Constants";
 import { User, Person, Survey } from "../../../../interfaces/DataTypes";
 
 interface PassedProps {
-  surveySelection: string;
+  surveySelection: Survey | null;
   handleSurveySelect: Function;
   handleNext: Function;
   profile: User;
@@ -29,7 +29,7 @@ interface PassedProps {
 }
 
 export const CustomDropdown = (props: PassedProps) => {
-  let {
+  const {
     surveySelection,
     handleSurveySelect,
     handleNext,
@@ -40,13 +40,13 @@ export const CustomDropdown = (props: PassedProps) => {
     view,
     handleViewSelect,
   } = props;
-  let profiles = profile.profiles;
+  const profiles = profile.profiles;
 
   if (surveys.length) {
     return (
       <IonPage>
         <AppHeader showHeader={true} text={"New Self-Report"} />
-        <IonContent>
+        <IonContent className="ion-padding-horizontal">
           <IonCard>
             <IonItem lines="none">
               <IonLabel position="stacked">
@@ -64,7 +64,7 @@ export const CustomDropdown = (props: PassedProps) => {
                   return (
                     <IonSelectOption
                       key={`${choice.id}`}
-                      value={`${choice.id}`}
+                      value={choice}
                     >
                       {`${choice.name}`}
                     </IonSelectOption>
@@ -115,13 +115,13 @@ export const CustomDropdown = (props: PassedProps) => {
                   key={diaryViews.CLINICALVISIT}
                   value={`clinicalVisit`}
                 >
-                  {`Regular Clinical Visit`}
+                  {`Clinical Encounter`}
                 </IonSelectOption>
                 <IonSelectOption
                   key={diaryViews.WITHDRAWAL}
                   value={`withdrawal`}
                 >
-                  {`Withdrawal`}
+                  {`Study Withdrawal`}
                 </IonSelectOption>
               </IonSelect>
             </IonItem>

@@ -1,12 +1,15 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
+import { History } from "../interfaces"
 
-admin.initializeApp(functions.config().firebase, 'ehr');
+initializeApp(functions.config().firebase, 'ehr');
 
 export class EHRService {
-    bucket = admin.storage().bucket();    
-    db = admin.firestore();
+    bucket = getStorage().bucket();    
+    db = getFirestore();
     collection = "ehr";
 
     private processEHR(ehrQuerySnapshot:any, callback: CallbackFunction) {
@@ -43,23 +46,28 @@ export class EHRService {
         }
     }
 
-    private filter(org:string, participantId:string, participantName:string, dob: string, callback: CallbackFunction) {
-        this.db.collection(this.collection).where("org", "==", org).where("participantId", "==", participantId).get().then((ehrQuerySnapshot: any) => {
-            if(!ehrQuerySnapshot.empty) {
-                ehrQuerySnapshot.forEach((doc: { id: string; data: () => any }) => {
-                    const data = doc.data();
-                    const receipts = data.receipts
-                        .filter((receipt: any) => {
-                            return receipt.profile.name === participantName && receipt.profile.dob.replace(/\D/g, "") === dob;
-                        })
-                        .map((receipt: any) => {
-                            return receipt.path;
-                        })
-                    callback(false, receipts);
-                });
-            } else {
-                callback(true, "no such ehr found");
-            }
+    private filter(org:string, surveyId:string, participantId:string, profileId:string, callback: CallbackFunction) {
+        this.db.collection(this.collection)
+            .where("org", "==", org)
+            .where("participantId", "==", participantId)
+            .where("surveyId", "==", surveyId)
+            .get()
+            .then((ehrQuerySnapshot: any) => {
+                if(!ehrQuerySnapshot.empty) {
+                    ehrQuerySnapshot.forEach((doc: { id: string; data: () => any }) => {
+                        const data = doc.data();
+                        const receipts = data.receipts
+                            .filter((receipt: any) => {
+                                return receipt.profile.id === profileId;
+                            })
+                            .map((receipt: any) => {
+                                return receipt.path;
+                            })
+                        callback(false, receipts);
+                    });
+                } else {
+                    callback(false, "no such ehr found");
+                }
         }).catch((error) => {
             console.error(error)
             callback(true, error);
@@ -67,12 +75,12 @@ export class EHRService {
     }
 
     public get(org: string, query: any, callback: CallbackFunction) {
-        const {respondentId, participantName, dob} = query;
-        this.filter(org, respondentId, participantName, dob, (err: boolean, receipts: any) => {
-            if (!err){
+        const {surveyId, respondentId, profileId} = query;
+        this.filter(org, surveyId, respondentId, profileId, (err: boolean, receipts: any) => {
+            if (!err && typeof(receipts) === "object"){
                 const promises = [];
                 for (const receipt of receipts) {
-                    promises.push(new Promise((resolve, reject) => {
+                    promises.push(new Promise((resolve) => {
                         const file = this.bucket.file(`${org}/ehr/${receipt}`);
                         file.getSignedUrl({
                             action: 'read',
@@ -90,11 +98,30 @@ export class EHRService {
     
                 Promise.all(promises)
                     .then((res) => {
-                        callback(false, res);
+                        const log:History = {
+                            actionType: "ehrExported",
+                            org: org,
+                            participantId: respondentId,
+                            questionnaireId: "",
+                            surveyId: surveyId,
+                            timestamp: new Date(),
+                            userId: profileId
+                        }
+                
+                        this.db.collection("history")
+                            .add(log)
+                            .then(() => {
+                                callback(false, res);
+                            })
+                            .catch((error) => {
+                                callback(true, error);
+                            })
                     })
                     .catch((error) => {
                         callback(true, error);
                     })
+            } else if (!err && typeof(receipts) === "string") { 
+                callback(false, receipts)
             } else {
                 callback(true, err);
             }
@@ -104,17 +131,35 @@ export class EHRService {
 
     public find(org: string, path: any, callback: CallbackFunction) {
         const file = this.bucket.file(`${org}/ehr/${path}`);
+
+        const log:History = {
+            actionType: "ehrExported",
+            org: org,
+            participantId: "",
+            questionnaireId: "",
+            surveyId: "",
+            timestamp: new Date(),
+            userId: path
+        }
+
         file.getSignedUrl({
-            action: 'read',
-            expires: '03-09-2491'
-        })
-        .then((signedUrls: any) => {
-            callback(false, signedUrls[0]);
-        })
-        .catch(error => {
-            console.error("error finding signed url");
-            callback(true, error);
-        })
+                action: 'read',
+                expires: '03-09-2491'
+            })
+            .then((signedUrls: any) => {
+                this.db.collection("history")
+                .add(log)
+                .then(() => {
+                    callback(false, signedUrls[0]);
+                })
+                .catch((err) => {
+                    callback(true, err);
+                })
+            })
+            .catch(error => {
+                console.error("error finding signed url");
+                callback(true, error);
+            })
     }
 }
 

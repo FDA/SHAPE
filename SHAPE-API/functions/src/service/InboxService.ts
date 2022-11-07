@@ -1,13 +1,15 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
 import {Inbox} from "../interfaces";
 
 
-admin.initializeApp(functions.config().firebase, 'inbox');
+initializeApp(functions.config().firebase, 'inbox');
 
 export class InboxService {
-    db = admin.firestore();
+    db = getFirestore();
     collection = "inbox";
 
     private processInbox(inboxQuerySnapshot: any, callback: CallbackFunction) {

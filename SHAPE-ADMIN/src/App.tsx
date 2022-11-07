@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Redirect, Route} from 'react-router-dom';
-import {IonApp, IonRouterOutlet} from '@ionic/react';
+import { getAuth, onAuthStateChanged} from 'firebase/auth';
+import {IonApp, IonRouterOutlet, setupIonicReact} from '@ionic/react';
 import {IonReactRouter} from '@ionic/react-router';
 import Home from './pages/Home';
 import NewSurvey from './pages/NewSurvey';
@@ -12,7 +13,14 @@ import NotificationCreator from './pages/NotificationCreator';
 import NotificationHistory from './pages/NotificationHistory';
 import ParticipantEditor from './pages/ParticipantEditor';
 import EHRReceipts from './pages/EHRReceipts';
-import 'firebase/auth';
+import OrgList from './pages/OrgList';
+import OrgEditor from './pages/OrgEditor';
+import Login from './pages/Login';
+import Q13Editor from './pages/q13Editor';
+import ErrorBoundary from './pages/ErrorBoundary';
+import PasswordReset from './authentication/PasswordReset';
+import Timeout from './pages/Timeout';
+import ProtectedRoute from './authentication/ProtectedRoute';
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 /* Basic CSS for apps built with Ionic */
@@ -28,17 +36,16 @@ import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
-import OrgList from './pages/OrgList';
-import OrgEditor from './pages/OrgEditor';
-import Login from './pages/Login';
-import Q13Editor from './pages/q13Editor';
-import ErrorBoundary from './pages/ErrorBoundary';
-import PasswordReset from './authentication/PasswordReset';
-import Timeout from './pages/Timeout';
-import {firebase} from './config';
-import ProtectedRoute from './authentication/ProtectedRoute';
 import {getEnvVar} from './utils/API';
 import {routes} from './utils/Constants';
+
+
+
+// required for ionic v6+
+setupIonicReact({
+   // config?: IonicConfig
+});
+
 
 // To update the native build, do: <ios> <android>
 // ionic build && ionic capacitor sync ios && ionic capacitor open ios
@@ -53,9 +60,10 @@ const App: React.FC = () => {
         });
 
     const [firebaseLoggedIn, setFirebaseLoggedIn] = useState(false);
-    firebase.auth().onAuthStateChanged(function (user) {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user: any) => {
         if (user) {
-            // User is signed in.
+            // User is signed in
             setFirebaseLoggedIn(true);
         } else {
             setFirebaseLoggedIn(false);

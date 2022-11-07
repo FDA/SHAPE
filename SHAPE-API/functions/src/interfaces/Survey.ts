@@ -11,5 +11,14 @@ export interface Survey {
     archived:boolean,
     participants?: Participant[],
     dateCreated: string,
-    org?:string
-}
+    org?:string,
+    public?: boolean,
+    scheduledJobs?: Array<ScheduledJob>;
+   }
+   export interface ScheduledJob {
+       id: string;
+       type: string;
+       interval: number;
+       questionnaireToJoin?: string;
+       questionnaireAnswered?: string;
+   }

@@ -16,9 +16,7 @@ interface NewEntryProps {
 interface NewEntryState {
   view: view;
   formType: formType;
-  surveySelection: string;
-  profileName: string;
-  profileDOB: string;
+  surveySelection: Survey | null;
   participant: Person;
   selectedView: view;
 }
@@ -29,9 +27,7 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
     this.state = {
       view: diaryViews.SURVEYSELECTION,
       formType: "Event Form",
-      surveySelection: "",
-      profileName: "",
-      profileDOB: "",
+      surveySelection: null,
       participant: {
         id: 0,
         name: "",
@@ -47,7 +43,7 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
   }
 
   componentDidMount() {
-    let survey = "";
+    let survey = null;
     let participant: Person = {
       id: 0,
       name: "",
@@ -56,15 +52,13 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
       isNew: false,
     };
     if (this.props.surveys.length === 1) {
-      survey = this.props.surveys[0].id;
+      survey = this.props.surveys[0];
     }
     if (this.props.profile.profiles.length === 1) {
       participant = this.props.profile.profiles[0];
     }
     this.setState({
       surveySelection: survey,
-      profileName: participant.name,
-      profileDOB: participant.dob,
       participant: participant,
     });
   }
@@ -76,35 +70,32 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
   };
 
   handleSurveySelect = (event: any) => {
-    let name = event.target.value;
+    const survey = event.target.value;
     this.setState({
-      surveySelection: name,
+      surveySelection: survey,
     });
   };
 
   handleViewSelect = (event: any) => {
-    let name = event.target.value;
+    const name = event.target.value;
     this.setState({
       selectedView: name,
     });
   };
 
   handleParticipantSelect = (event: any) => {
-    let participant = event.target.value;
+    const participant = event.target.value;
     this.setState({
-      profileName: participant.name,
-      profileDOB: participant.dob,
       participant: participant,
     });
   };
 
   handleNext = (event: any) => {
     event.preventDefault();
-    let { selectedView } = this.state;
+    const { selectedView } = this.state;
     if (
       this.state.surveySelection !== null &&
-      this.state.surveySelection !== "" &&
-      this.state.profileName !== "" &&
+      this.state.participant !== null &&
       this.state.selectedView !== null
     ) {
       this.setState({
@@ -120,15 +111,13 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
   };
 
   render() {
-    let {
+    const {
       view,
-      profileName,
-      profileDOB,
       surveySelection,
       participant,
       selectedView,
     } = this.state;
-    let { profile, surveys } = this.props;
+    const { profile, surveys } = this.props;
 
     if (view === diaryViews.SURVEYSELECTION)
       return (
@@ -149,9 +138,8 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
       return (
         <EventForm
           setView={this.setView}
-          profileName={profileName}
-          profileDOB={profileDOB}
-          surveyId={this.state.surveySelection}
+          participant={participant}
+          survey={surveySelection}
         />
       );
 
@@ -159,9 +147,8 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
       return (
         <DoctorVisit
           setView={this.setView}
-          surveyId={surveySelection}
-          profileName={profileName}
-          profileDOB={profileDOB}
+          survey={surveySelection}
+          participant={participant}
         />
       );
 
@@ -169,9 +156,8 @@ class NewEntry extends Component<NewEntryProps, NewEntryState> {
       return (
         <Withdrawal
           setView={this.setView}
-          profileName={profileName}
-          profileDOB={profileDOB}
-          surveyId={surveySelection}
+          participant={participant}
+          survey={surveySelection}
         />
       );
 

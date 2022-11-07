@@ -7,13 +7,9 @@ interface PassedProps {
 }
 
 export const DescriptionSection = (props: PassedProps) => {
-  let { value, handleInputChange } = props;
+  const { value, handleInputChange } = props;
   return (
-    <IonItem
-      style={{
-        paddingBottom: "10px",
-      }}
-    >
+    <IonItem style={{ paddingBottom: "1em" }}>
       <IonLabel position="stacked">
         Describe the Event<IonText color="danger">*</IonText>
       </IonLabel>

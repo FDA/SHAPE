@@ -11,7 +11,7 @@ interface PassedProps {
 
 class InfoCardContainer extends Component<PassedProps, {}> {
   render() {
-    let { question, profile, org } = this.props;
+    const { question, profile, org } = this.props;
     return <InfoCard question={question} profile={profile} org={org} />;
   }
 }
@@ -21,6 +21,6 @@ const mapStateToProps = (state: any) => ({
   org: state.org,
 });
 
-const mapDispatchToProps = (dispatch: any) => ({});
+const mapDispatchToProps = (/* dispatch: any */) => ({});
 
 export default connect(mapStateToProps, mapDispatchToProps)(InfoCardContainer);

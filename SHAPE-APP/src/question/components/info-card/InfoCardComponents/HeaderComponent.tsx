@@ -8,7 +8,7 @@ interface PassedProps {
 
 class HeaderComponent extends React.Component<PassedProps, {}> {
   render() {
-    let { section, index } = this.props;
+    const { section, index } = this.props;
     return <h1 key={index}>{section.value}</h1>;
   }
 }

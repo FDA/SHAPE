@@ -9,51 +9,43 @@ import {
     IonText,
     IonAlert
 } from '@ionic/react';
-import {connect} from 'react-redux';
-import {ItemReorderEventDetail} from '@ionic/core';
-import {isEmptyObject, guid} from '../utils/Utils';
-import {QuestionnaireQuestionComponent} from '../interfaces/Components';
-import {
-    QuestionRule,
-    QuestionChoice,
-    Questionnaire,
-    InfoCardImageSection
-} from '../interfaces/DataTypes';
-import React, {Component} from 'react';
+import { connect } from 'react-redux';
+import { ItemReorderEventDetail } from '@ionic/core';
+import { isEmptyObject, guid } from '../utils/Utils';
+import { QuestionnaireQuestionComponent } from '../interfaces/Components';
+import { QuestionRule, QuestionChoice, Questionnaire, InfoCardImageSection } from '../interfaces/DataTypes';
+import React, { Component } from 'react';
 import QuestionCard from './QuestionCard/QuestionCard';
-import {updateQuestionnaire} from '../redux/actions/Questionnaire';
-import {editQuestionnaire, storeImage} from '../utils/API';
-import {cloneDeep, differenceBy} from 'lodash';
+import { updateQuestionnaire } from '../redux/actions/Questionnaire';
+import { editQuestionnaire, storeImage } from '../utils/API';
+import { cloneDeep, differenceBy } from 'lodash';
 import LoadingScreen from '../layout/LoadingScreen';
-import {questionTypes, sectionTypes} from '../utils/Constants';
+import { questionTypes, sectionTypes } from '../utils/Constants';
 const arrayMove = require('array-move');
 
-interface ReduxProps {
+interface Props {
     questionnaire: Questionnaire;
     updateQuestionnaireDispatch: Function;
+    setEditingQuestions: Function;
 }
 
 interface State {
-    success: boolean;
     questionList: Array<QuestionnaireQuestionComponent>;
     reorder: boolean;
     editing: boolean;
-    sorting: boolean;
     showDeleteAlert: boolean;
     isLoading: boolean;
     questionId: string;
     error: boolean;
 }
 
-class Reorder extends Component<ReduxProps, State> {
-    constructor(props: ReduxProps) {
+class Reorder extends Component<Props, State> {
+    constructor(props: Props) {
         super(props);
         this.state = {
-            success: false,
             questionList: [],
             reorder: false,
             editing: false,
-            sorting: false,
             showDeleteAlert: false,
             isLoading: false,
             questionId: null,
@@ -62,22 +54,73 @@ class Reorder extends Component<ReduxProps, State> {
     }
 
     componentDidMount() {
-        this.setState({isLoading: true});
+        this.setState({ isLoading: false });
         this.load();
     }
 
-    processQuestionnaireQuestionComponent = (
-        elem: QuestionnaireQuestionComponent
-    ) => {
+    load = () => {
+        const { questionnaire } = this.props;
+        if (!isEmptyObject(questionnaire.questions)) {
+            const questionList = cloneDeep(questionnaire.questions);
+            this.setState({
+                questionList: questionList,
+                isLoading: false,
+                error: false
+            });
+        }
+    };
+
+    UNSAFE_componentWillReceiveProps(props: Props) {
+        const { setEditingQuestions } = props;
+        const { editing } = this.state;
+        const nextQuestionList = cloneDeep(props.questionnaire.questions);
+        let questionList = cloneDeep(this.state.questionList);
+
+        const differences: QuestionnaireQuestionComponent[] = differenceBy(
+            nextQuestionList,
+            questionList,
+            'name'
+        );
+
+        const newQuestions: QuestionnaireQuestionComponent[] = differences.filter(
+            (elem: QuestionnaireQuestionComponent) => {
+                return nextQuestionList.includes(elem);
+            }
+        );
+
+        if (!editing) {
+            this.setState({
+                questionList: nextQuestionList,
+                isLoading: false,
+                error: false
+            });
+        } else if (editing && newQuestions.length > 0) {
+            questionList = questionList.concat(newQuestions);
+
+            questionList = questionList.map((elem: QuestionnaireQuestionComponent, index: number) => {
+                elem.order = index;
+                return elem;
+            });
+
+            const stillEditing =
+                questionList.filter((elem: QuestionnaireQuestionComponent) => {
+                    return elem.editing === true;
+                }).length > 0;
+
+            setEditingQuestions(stillEditing);
+            this.setState({
+                questionList: questionList,
+                editing: stillEditing,
+                isLoading: false,
+                error: false
+            });
+        }
+    }
+
+    processQuestionnaireQuestionComponent = (elem: QuestionnaireQuestionComponent) => {
         delete elem.editing;
-        elem.required =
-            elem.required === undefined || elem.required === null
-                ? false
-                : elem.required;
-        if (
-            elem.requiredMessage === undefined ||
-            elem.requiredMessage === null
-        ) {
+        elem.required = elem.required === undefined || elem.required === null ? false : elem.required;
+        if (!elem.required) {
             delete elem.requiredMessage;
         }
         return elem;
@@ -85,15 +128,13 @@ class Reorder extends Component<ReduxProps, State> {
 
     // save without updating state so that reorder works
     save = () => {
-        let {questionnaire} = this.props;
-        let questionnaireId = questionnaire.id;
-        let {questionList} = this.state;
+        const { questionnaire } = this.props;
+        const questionnaireId = questionnaire.id;
+        const { questionList } = this.state;
 
-        questionnaire.questions = questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                return this.processQuestionnaireQuestionComponent(elem);
-            }
-        );
+        questionnaire.questions = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            return this.processQuestionnaireQuestionComponent(elem);
+        });
 
         if (!questionnaireId) {
             return new Promise((resolve, reject) => {
@@ -108,80 +149,63 @@ class Reorder extends Component<ReduxProps, State> {
     doReorder = (event: CustomEvent<ItemReorderEventDetail>) => {
         event.stopPropagation();
         let questionList = this.state.questionList;
-        questionList = arrayMove(
-            questionList,
-            event.detail.from,
-            event.detail.to
-        );
-        questionList = questionList.map(
-            (question: QuestionnaireQuestionComponent, index: number) => {
-                question.order = index;
-                return question;
-            }
-        );
-        this.setState({questionList: questionList});
+        questionList = arrayMove(questionList, event.detail.from, event.detail.to);
+        questionList = questionList.map((question: QuestionnaireQuestionComponent, index: number) => {
+            question.order = index;
+            return question;
+        });
+        this.setState({ questionList: questionList });
         event.detail.complete();
     };
 
     cancel = (id: string) => {
-        let questionnaire = cloneDeep(this.props.questionnaire);
+        const { setEditingQuestions } = this.props;
+        const questionnaire = cloneDeep(this.props.questionnaire);
         let questionList = cloneDeep(this.state.questionList);
 
-        let canceledQuestion = questionnaire.questions.find(
-            (elem: QuestionnaireQuestionComponent) => {
-                return elem.name === id;
-            }
-        );
+        const canceledQuestion = questionnaire.questions.find((elem: QuestionnaireQuestionComponent) => {
+            return elem.name === id;
+        });
 
-        questionList = questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    return canceledQuestion;
-                } else return elem;
-            }
-        );
+        questionList = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                return canceledQuestion;
+            } else return elem;
+        });
 
-        let checkEditing = questionList.filter(
-            (elem: QuestionnaireQuestionComponent) => {
+        const editing =
+            questionList.filter((elem: QuestionnaireQuestionComponent) => {
                 return elem.editing === true;
-            }
-        );
-        let editing = checkEditing.length > 0;
+            }).length > 0;
 
-        this.setState({questionList: questionList, editing: editing});
+        setEditingQuestions(editing);
+        this.setState({ questionList: questionList, editing: editing });
     };
 
     // called when delete button is clicked on question card
     deleteRow = (questionId: string) => {
-        this.setState({showDeleteAlert: true, questionId: questionId});
+        this.setState({ showDeleteAlert: true, questionId: questionId });
     };
 
     // called when user clicks "yes" on showDeleteAlert
     deleteQuestion = () => {
-        let questionnaire = cloneDeep(this.props.questionnaire);
+        const questionnaire = cloneDeep(this.props.questionnaire);
         let questionList = cloneDeep(this.state.questionList);
-        let questionnaireId = questionnaire.id;
-        let {questionId} = this.state;
+        const questionnaireId = questionnaire.id;
+        const { questionId } = this.state;
+        const { setEditingQuestions } = this.props;
 
-        questionList = questionList.filter(
-            (elem: QuestionnaireQuestionComponent) => {
-                return elem.name !== questionId;
-            }
-        );
+        questionList = questionList.filter((elem: QuestionnaireQuestionComponent) => {
+            return elem.name !== questionId;
+        });
+        questionList = questionList.map((elem: QuestionnaireQuestionComponent, index: number) => {
+            elem.order = index;
+            return elem;
+        });
 
-        questionList = questionList.map(
-            (elem: QuestionnaireQuestionComponent, index: number) => {
-                elem.order = index;
-                return elem;
-            }
-        );
-
-        questionnaire.questions = questionnaire.questions.filter(
-            (elem: QuestionnaireQuestionComponent) => {
-                return elem.name !== questionId;
-            }
-        );
-
+        questionnaire.questions = questionnaire.questions.filter((elem: QuestionnaireQuestionComponent) => {
+            return elem.name !== questionId;
+        });
         questionnaire.questions = questionnaire.questions.map(
             (elem: QuestionnaireQuestionComponent, index: number) => {
                 elem.order = index;
@@ -189,25 +213,24 @@ class Reorder extends Component<ReduxProps, State> {
             }
         );
 
-        let checkEditing = questionList.filter(
-            (elem: QuestionnaireQuestionComponent) => {
+        const editing =
+            questionList.filter((elem: QuestionnaireQuestionComponent) => {
                 return elem.editing === true;
-            }
-        );
-        let editing = checkEditing.length > 0;
+            }).length > 0;
 
-        this.setState({questionList: questionList, editing: editing});
+        setEditingQuestions(editing);
+        this.setState({ questionList: questionList, editing: editing });
         this.props.updateQuestionnaireDispatch(questionnaireId, questionnaire);
     };
 
     processInfo = (elem: QuestionnaireQuestionComponent) => {
-        let {sections} = elem;
+        let { sections } = elem;
         let promises: Promise<any>[] = [];
         for (let key in sections) {
             let section = sections[key] as InfoCardImageSection;
-            if (section.type === sectionTypes.IMAGE) {
-                let split = section.value.split(',');
-                if (split.length > 1) {
+            if (section.type === sectionTypes.IMAGE && section.value) {
+                const split = section.value.split(',');
+                if (split && split.length > 1) {
                     let base64String = split[1];
                     let uid = guid();
                     section.value = uid;
@@ -225,56 +248,64 @@ class Reorder extends Component<ReduxProps, State> {
     };
 
     saveEditedRow = (id: string) => {
-        let questionnaire = cloneDeep(this.props.questionnaire);
+        const { setEditingQuestions } = this.props;
+        const questionnaire = cloneDeep(this.props.questionnaire);
         let questionList = cloneDeep(this.state.questionList);
-        let questionnaireId = questionnaire.id;
         let promises: Promise<any>[] = [];
 
-        questionList = questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    elem.editing = false;
-                    if (elem.type === questionTypes.INFO) {
-                        promises = this.processInfo(elem);
-                    }
-                    return elem;
-                } else return elem;
+        questionList = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                delete elem.editing;
+                if (elem.type === questionTypes.INFO) {
+                    promises = this.processInfo(elem);
+                }
             }
-        );
+            return elem;
+        });
 
-        let editedQuestion = questionList.find(
-            (elem: QuestionnaireQuestionComponent) => {
-                return elem.name === id;
-            }
-        );
+        const editedQuestion = questionList.find((elem: QuestionnaireQuestionComponent) => {
+            return elem.name === id;
+        });
 
-        questionnaire.questions = questionnaire.questions.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    return editedQuestion;
-                } else return elem;
-            }
-        );
+        questionnaire.questions = questionnaire.questions.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                return editedQuestion;
+            } else return elem;
+        });
 
         Promise.all(promises).then(() => {
-            let checkEditing = questionList.filter(
-                (elem: QuestionnaireQuestionComponent) => {
+            const editing =
+                questionList.filter((elem: QuestionnaireQuestionComponent) => {
                     return elem.editing === true;
-                }
-            );
-            let editing = checkEditing.length > 0;
+                }).length > 0;
 
-            questionnaire.questions = questionnaire.questions.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    return this.processQuestionnaireQuestionComponent(elem);
-                }
-            );
+            questionnaire.questions = questionnaire.questions.map((elem: QuestionnaireQuestionComponent) => {
+                return this.processQuestionnaireQuestionComponent(elem);
+            });
 
-            this.setState({questionList: questionList, editing: editing});
-            this.props.updateQuestionnaireDispatch(
-                questionnaireId,
-                questionnaire
-            );
+            setEditingQuestions(editing);
+            this.setState({ questionList: questionList, editing: editing });
+            this.props.updateQuestionnaireDispatch(questionnaire.id, questionnaire);
+        });
+    };
+
+    saveAll = async () => {
+        const { setEditingQuestions } = this.props;
+        const questionList = cloneDeep(this.state.questionList);
+        const questionnaire = cloneDeep(this.props.questionnaire);
+        let promises: Promise<any>[] = [];
+
+        questionnaire.questions = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.type === questionTypes.INFO) {
+                promises = this.processInfo(elem);
+            }
+            return this.processQuestionnaireQuestionComponent(elem);
+        });
+
+        Promise.all(promises).then(() => {
+            setEditingQuestions(false);
+            this.setState({ questionList: questionnaire.questions, editing: false });
+            this.props.updateQuestionnaireDispatch(questionnaire.id, questionnaire);
         });
     };
 
@@ -287,117 +318,103 @@ class Reorder extends Component<ReduxProps, State> {
     };
 
     editRow = (id: string) => {
+        const { setEditingQuestions } = this.props;
         let questionList = cloneDeep(this.state.questionList);
-        questionList = questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    elem.editing = true;
-                    return elem;
-                } else return elem;
-            }
-        );
-        this.setState({questionList: questionList, editing: true});
+        questionList = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                elem.editing = true;
+                return elem;
+            } else return elem;
+        });
+        setEditingQuestions(true);
+        this.setState({ questionList: questionList, editing: true });
     };
 
     handleSectionChange = (sections: any, id: string) => {
-        let questionList = this.state.questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    elem.sections = sections;
-                    return elem;
-                } else return elem;
-            }
-        );
-        this.setState({questionList: questionList});
+        let questionList = this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                elem.sections = sections;
+                return elem;
+            } else return elem;
+        });
+        this.setState({ questionList: questionList });
     };
 
     handleRowChange = (e: any, id: string) => {
-        const {name, value} = e.target;
-        let questionList = this.state.questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    if (name === 'required') {
-                        const {checked} = e.target;
-                        //@ts-ignore
-                        elem[name] = checked;
-                    } else {
-                        //@ts-ignore
-                        elem[name] = value;
-                    }
-                    return elem;
-                } else return elem;
-            }
-        );
-        this.setState({questionList: questionList});
+        const { name, value } = e.target;
+        let questionList = this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                if (name === 'required') {
+                    const { checked } = e.target;
+                    //@ts-ignore
+                    elem[name] = checked;
+                } else {
+                    //@ts-ignore
+                    elem[name] = value;
+                }
+                return elem;
+            } else return elem;
+        });
+        this.setState({ questionList: questionList });
     };
 
     handleRuleChange = (rules: Array<QuestionRule>, id: string) => {
         this.setState({
-            questionList: this.state.questionList.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    if (elem.name === id) {
-                        elem.rules = rules;
-                        return elem;
-                    } else return elem;
-                }
-            )
+            questionList: this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+                if (elem.name === id) {
+                    elem.rules = rules;
+                    return elem;
+                } else return elem;
+            })
         });
     };
 
     handleChoiceChange = (e: any, id: string) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
         let questionList = cloneDeep(this.state.questionList);
 
-        questionList = questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                const nameArr = name.split('-');
-                const type = nameArr[0];
-                const order = parseInt(nameArr[1]);
-                if (elem.name === id) {
-                    if (type === 'value') {
-                        elem.choices = elem.choices.map(
-                            (choice: QuestionChoice) => {
-                                if (choice.order === order) {
-                                    choice.value = value;
-                                }
-                                return choice;
-                            }
-                        );
-                    } else if (type === 'text') {
-                        //type is text
-                        elem.choices = elem.choices.map(
-                            (choice: QuestionChoice) => {
-                                if (choice.order === order) {
-                                    choice.text = value;
-                                }
-                                return choice;
-                            }
-                        );
-                    }
+        questionList = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            const nameArr = name.split('-');
+            const type = nameArr[0];
+            const order = parseInt(nameArr[1]);
+            if (elem.name === id) {
+                if (type === 'value') {
+                    elem.choices = elem.choices.map((choice: QuestionChoice) => {
+                        if (choice.order === order) {
+                            choice.value = value;
+                        }
+                        return choice;
+                    });
+                } else if (type === 'text') {
+                    //type is text
+                    elem.choices = elem.choices.map((choice: QuestionChoice) => {
+                        if (choice.order === order) {
+                            choice.text = value;
+                        }
+                        return choice;
+                    });
                 }
-                return elem;
             }
-        );
+            return elem;
+        });
 
-        this.setState({questionList: questionList});
+        this.setState({ questionList: questionList });
     };
 
     handleChoiceDelete = (id: string, choiceId: string) => {
-        let QL = this.state.questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.name === id) {
-                    elem.choices = elem.choices
-                        .filter((choice: QuestionChoice) => {
-                            return choice.index !== choiceId;
-                        })
-                        .map((choice: QuestionChoice, index: number) => {
-                            choice.order = index;
-                            return choice;
-                        });
-                }
-                return elem;
+        let QL = this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.name === id) {
+                elem.choices = elem.choices
+                    .filter((choice: QuestionChoice) => {
+                        return choice.index !== choiceId;
+                    })
+                    .map((choice: QuestionChoice, index: number) => {
+                        choice.order = index;
+                        return choice;
+                    });
             }
-        );
+            return elem;
+        });
 
         this.setState({
             questionList: QL
@@ -405,115 +422,39 @@ class Reorder extends Component<ReduxProps, State> {
     };
 
     handleOptionChange = (e: any, id: string) => {
-        const {name, value} = e.target;
-        let {questionList} = this.state;
+        const { name, value } = e.target;
+        let { questionList } = this.state;
         this.setState({
-            questionList: questionList.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    if (elem.name === id) {
-                        //@ts-ignore
-                        elem.options[name] = value;
-                        //@ts-ignore
-                        return elem;
-                    } else return elem;
-                }
-            )
+            questionList: questionList.map((elem: QuestionnaireQuestionComponent) => {
+                if (elem.name === id) {
+                    //@ts-ignore
+                    elem.options[name] = value;
+                    //@ts-ignore
+                    return elem;
+                } else return elem;
+            })
         });
     };
 
     reorder = () => {
-        this.setState({reorder: !this.state.reorder});
+        this.setState({ reorder: !this.state.reorder });
     };
 
     saveOrder = () => {
         this.save()
             .then(() => {
-                this.setState({reorder: !this.state.reorder});
+                this.setState({ reorder: !this.state.reorder });
             })
             .catch((e: any) => console.error(e));
     };
 
-    load = () => {
-        const parent = this;
-        let {questionnaire} = this.props;
-        if (!isEmptyObject(questionnaire.questions)) {
-            let questionList = cloneDeep(questionnaire.questions);
-            this.setState({
-                questionList: questionList
-            });
-        }
-        setTimeout(function () {
-            parent.setState({isLoading: false, error: false});
-        }, 500);
-    };
-
-    UNSAFE_componentWillReceiveProps(props: ReduxProps) {
-        const parent = this;
-        let {editing} = this.state;
-        let nextQuestionList = cloneDeep(props.questionnaire.questions);
-        let questionList = cloneDeep(this.state.questionList);
-
-        let differences: QuestionnaireQuestionComponent[] = differenceBy(
-            nextQuestionList,
-            questionList,
-            'name'
-        );
-
-        let newQuestions: QuestionnaireQuestionComponent[] = differences.filter(
-            (elem: QuestionnaireQuestionComponent) => {
-                return nextQuestionList.includes(elem);
-            }
-        );
-        let shouldUpdate = newQuestions.length > 0;
-
-        if (!editing) {
-            this.setState({questionList: nextQuestionList});
-            setTimeout(() => {
-                parent.setState({isLoading: false, error: false});
-            }, 1000);
-        } else if (editing && shouldUpdate) {
-            questionList = questionList.concat(newQuestions);
-
-            questionList = questionList.map(
-                (elem: QuestionnaireQuestionComponent, index: number) => {
-                    elem.order = index;
-                    return elem;
-                }
-            );
-
-            let checkEditing = questionList.filter(
-                (elem: QuestionnaireQuestionComponent) => {
-                    return elem.editing === true;
-                }
-            );
-            let stillEditing = checkEditing.length > 0;
-
-            this.setState({questionList: questionList, editing: stillEditing});
-            setTimeout(() => {
-                parent.setState({isLoading: false, error: false});
-            }, 1000);
-        }
-    }
-
     render() {
-        let {
-            questionList,
-            reorder,
-            editing,
-            isLoading,
-            error,
-            showDeleteAlert
-        } = this.state;
-        let {questionnaire} = this.props;
-        let locked = !isEmptyObject(questionnaire.locked)
-            ? questionnaire.locked
-            : false;
+        const { questionList, reorder, editing, isLoading, error, showDeleteAlert } = this.state;
+        const { questionnaire } = this.props;
+        const locked = !isEmptyObject(questionnaire.locked) ? questionnaire.locked : false;
 
-        questionList.sort(
-            (
-                a: QuestionnaireQuestionComponent,
-                b: QuestionnaireQuestionComponent
-            ) => (a.order > b.order ? 1 : -1)
+        questionList.sort((a: QuestionnaireQuestionComponent, b: QuestionnaireQuestionComponent) =>
+            a.order > b.order ? 1 : -1
         );
 
         return (
@@ -536,72 +477,57 @@ class Reorder extends Component<ReduxProps, State> {
                         Save Order
                     </IonButton>
                 )}
+                {!reorder && editing && <IonButton onClick={this.saveAll}>Save All</IonButton>}
                 {isLoading && (
                     <IonRow text-center>
-                        <IonCol size="12" style={{textAlign: 'center'}}>
+                        <IonCol size='12' style={{ textAlign: 'center' }}>
                             <LoadingScreen />
                         </IonCol>
                     </IonRow>
                 )}
                 {error && (
-                    <IonCard style={{textAlign: 'center'}}>
+                    <IonCard style={{ textAlign: 'center' }}>
                         <IonCardContent>
-                            <IonText color="danger">
-                                Error loading questions. Try refreshing.
-                            </IonText>
+                            <IonText color='danger'>Error loading questions. Try refreshing.</IonText>
                         </IonCardContent>
                     </IonCard>
                 )}
                 {isEmptyObject(questionList) && (
-                    <IonCard style={{textAlign: 'center'}}>
-                        <IonCardContent>
-                            No questions have been added.
-                        </IonCardContent>
+                    <IonCard style={{ textAlign: 'center' }}>
+                        <IonCardContent>No questions have been added.</IonCardContent>
                     </IonCard>
                 )}
-                <IonList lines="none">
-                    <IonReorderGroup
-                        disabled={!reorder}
-                        onIonItemReorder={this.doReorder}>
-                        {questionList.map(
-                            (question: QuestionnaireQuestionComponent) => {
-                                return (
-                                    <QuestionCard
-                                        key={question.name}
-                                        question={question}
-                                        saveEditedRow={this.saveEditedRow}
-                                        saveRule={this.saveRule}
-                                        deleteRow={this.deleteRow}
-                                        cancel={this.cancel}
-                                        editRow={this.editRow}
-                                        handleRowChange={this.handleRowChange}
-                                        handleChoiceChange={
-                                            this.handleChoiceChange
-                                        }
-                                        handleSectionChange={
-                                            this.handleSectionChange
-                                        }
-                                        handleOptionChange={
-                                            this.handleOptionChange
-                                        }
-                                        questionList={questionList}
-                                        handleRuleChange={this.handleRuleChange}
-                                        reorder={reorder}
-                                        locked={locked}
-                                        handleChoiceDelete={
-                                            this.handleChoiceDelete
-                                        }
-                                    />
-                                );
-                            }
-                        )}
+                <IonList lines='none'>
+                    <IonReorderGroup disabled={!reorder} onIonItemReorder={this.doReorder}>
+                        {questionList.map((question: QuestionnaireQuestionComponent) => {
+                            return (
+                                <QuestionCard
+                                    key={question.name}
+                                    question={question}
+                                    saveEditedRow={this.saveEditedRow}
+                                    saveRule={this.saveRule}
+                                    deleteRow={this.deleteRow}
+                                    cancel={this.cancel}
+                                    editRow={this.editRow}
+                                    handleRowChange={this.handleRowChange}
+                                    handleChoiceChange={this.handleChoiceChange}
+                                    handleSectionChange={this.handleSectionChange}
+                                    handleOptionChange={this.handleOptionChange}
+                                    questionList={questionList}
+                                    handleRuleChange={this.handleRuleChange}
+                                    reorder={reorder}
+                                    locked={locked}
+                                    handleChoiceDelete={this.handleChoiceDelete}
+                                />
+                            );
+                        })}
                     </IonReorderGroup>
                 </IonList>
 
                 <IonAlert
                     isOpen={showDeleteAlert}
                     onDidDismiss={() => {
-                        this.setState({showDeleteAlert: false});
+                        this.setState({ showDeleteAlert: false });
                     }}
                     header={'Delete'}
                     message={`Are you sure you want to permanently delete this question?`}
@@ -632,10 +558,7 @@ function mapStateToProps(state: any) {
 
 function mapDispatchToProps(dispatch: any) {
     return {
-        updateQuestionnaireDispatch(
-            questionnaireId: string,
-            questionnaire: Questionnaire
-        ) {
+        updateQuestionnaireDispatch(questionnaireId: string, questionnaire: Questionnaire) {
             dispatch(updateQuestionnaire(questionnaireId, questionnaire));
         }
     };

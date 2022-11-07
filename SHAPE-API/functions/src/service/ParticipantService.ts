@@ -1,12 +1,12 @@
-import * as admin from "firebase-admin";
-import {Participant} from "../interfaces";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
+import {Participant} from "../interfaces";
 
-admin.initializeApp(functions.config().firebase, 'participant');
+initializeApp(functions.config().firebase, 'participant');
 export class ParticipantService {
-
-    db = admin.firestore();
+    db = getFirestore();
     collection = "participant";
 
     private processParticipant(participantQuerySnapshot: any, callback: CallbackFunction) {
@@ -106,7 +106,7 @@ export class ParticipantService {
                 if (!participant.exists) {
                     callback(true, {id: query.participantId, data: "Not Found", returned: participant});
                 } else {
-                    let data = participant.data();
+                    const data = participant.data();
                     if(data!.org === org) {
                         callback(false, {id: participant.id, data: participant.data()})
                     } else {

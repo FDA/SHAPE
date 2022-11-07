@@ -3,6 +3,8 @@ import { QuestionnaireQuestion } from "../interfaces/DataTypes";
 export interface Questionnaire {
   questions: QuestionnaireQuestion[];
   id?: string;
+  org: string;
+  public?: boolean;
 }
 
 export interface Profile {
@@ -13,5 +15,5 @@ export interface Profile {
   href?: string;
   isNew?: boolean;
   age?: number;
-  id?: string;
+  id: string;
 }

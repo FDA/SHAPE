@@ -13,7 +13,7 @@ interface PassedProps {
 
 class AddEHRContainer extends Component<PassedProps & RouteComponentProps, {}> {
   render() {
-    let {
+    const {
       fireBaseAuth,
       setActiveProfileDispatch,
       profile,

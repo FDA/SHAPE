@@ -14,7 +14,7 @@ export const Toast: React.FC<{
       position={"bottom"}
       isOpen={props.isOpen}
       message={props.message}
-      duration={3000}
+      duration={5000}
       onDidDismiss={() => props.onDidDismiss()}
       buttons={[
         {

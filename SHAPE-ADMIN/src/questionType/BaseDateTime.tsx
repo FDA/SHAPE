@@ -1,13 +1,6 @@
-import React, {Component} from 'react';
-import {
-    IonList,
-    IonItem,
-    IonLabel,
-    IonText,
-    IonSelect,
-    IonSelectOption
-} from '@ionic/react';
-import {FORMATS} from '../utils/Constants';
+import React, { Component } from 'react';
+import { IonList, IonItem, IonLabel, IonText, IonSelect, IonSelectOption } from '@ionic/react';
+import { FORMATS } from '../utils/Constants';
 
 interface Props {
     format: string;
@@ -20,7 +13,7 @@ interface FormatDropdownProps {
 }
 
 const FormatDropdown = (props: FormatDropdownProps) => {
-    let {format, setFormat} = props;
+    let { format, setFormat } = props;
     return (
         <IonItem
             style={{
@@ -31,36 +24,32 @@ const FormatDropdown = (props: FormatDropdownProps) => {
             <IonSelect
                 value={format}
                 multiple={false}
-                cancelText="Cancel"
-                okText="Ok"
+                cancelText='Cancel'
+                okText='Ok'
                 onIonChange={(e) => setFormat(e.detail.value)}>
                 {(function getSelect(formatList) {
-                    return formatList.map(
-                        (e: {name: string; formatStr: string}) => {
-                            return (
-                                <IonSelectOption
-                                    key={e.formatStr}
-                                    value={e.formatStr}>
-                                    {e.name}
-                                </IonSelectOption>
-                            );
-                        }
-                    );
+                    return formatList.map((e: { name: string; formatStr: string }) => {
+                        return (
+                            <IonSelectOption key={e.formatStr} value={e.formatStr}>
+                                {e.name}
+                            </IonSelectOption>
+                        );
+                    });
                 })(FORMATS)}
             </IonSelect>
         </IonItem>
     );
 };
 
-class DateTime extends Component<Props> {
+class BaseDateTime extends Component<Props> {
     render() {
-        let {format, setFormat} = this.props;
+        let { format, setFormat } = this.props;
 
         return (
-            <IonList lines="full" class="ion-no-margin ion-no-padding">
+            <IonList lines='full' class='ion-no-margin ion-no-padding'>
                 <IonItem>
-                    <IonLabel position="stacked">
-                        Format<IonText color="danger">*</IonText>
+                    <IonLabel position='stacked'>
+                        Format<IonText color='danger'>*</IonText>
                     </IonLabel>
                     <FormatDropdown format={format} setFormat={setFormat} />
                 </IonItem>
@@ -69,4 +58,4 @@ class DateTime extends Component<Props> {
     }
 }
 
-export default DateTime;
+export default BaseDateTime;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ReactNode } from "react";
 import { QuestionnaireQuestion } from "../../interfaces/DataTypes";
 
@@ -12,13 +13,13 @@ export class BaseQuestionFactory {
     throw new Error("Must override this function");
   }
 
-  private _value: string = "";
+  private _value = "";
 
   setValue(value: string) {
     this._value = value;
   }
 
-  getValue(value: string) {
+  getValue() {
     return this._value;
   }
 }

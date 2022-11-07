@@ -16,19 +16,19 @@ import { EHR } from "../../interfaces/DataTypes";
 import { environments, firebaseFunctions } from "../../utils/Constants";
 
 export const setTargetEHR = (ehr: EHR) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: SET_EHR_SELECTED, payload: ehr });
   };
 };
 
 export const resetEHR = () => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: RESET_EHR_STATE });
   };
 };
 
 export const fetchPatientEHR = (patientId: string, ehr: any) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: IS_LOADING, isLoading: true });
     const { bearerToken, selected } = ehr;
     fetch(
@@ -50,7 +50,7 @@ export const fetchPatientEHR = (patientId: string, ehr: any) => {
 };
 
 export const patientSearch = (ehr: any) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: IS_LOADING, isLoading: true });
     const { bearerToken, selected } = ehr;
     fetch(
@@ -73,7 +73,7 @@ export const patientSearch = (ehr: any) => {
 };
 
 export const providerSearch = (term: string, token: string) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: IS_LOADING, isLoading: true });
     const url = `${process.env.REACT_APP_BASE_URL}/${firebaseFunctions.SEARCH}?term=${term}&token=${token}`;
     if (term && term !== "") {
@@ -158,13 +158,13 @@ const determineEHRType = (obj: any) => {
 };
 
 export const clearSearch = () => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: RESET_EHR_SEARCH });
   };
 };
 
 export const getEhrAccessCode = (uid: string) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: IS_LOADING, isLoading: true });
 
     const url = `${process.env.REACT_APP_BASE_URL}/${firebaseFunctions.GETNEWAUTHCODE}/${uid}`;
@@ -207,7 +207,7 @@ export const getEhrAccessCode = (uid: string) => {
 };
 
 export const getEhrBearerToken = (uid: string, accesscode: string) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: IS_LOADING, isLoading: true });
 
     const url = `${process.env.REACT_APP_BASE_URL}/${firebaseFunctions.GETBEARERTOKEN}?participantId=${uid}&code=${accesscode}`;
@@ -255,7 +255,7 @@ export const getEhrBearerToken = (uid: string, accesscode: string) => {
 };
 
 export const getEHRUserCode = (uid: string) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
+  return (dispatch: Function) => {
     dispatch({ type: IS_LOADING, isLoading: true });
     const url = `${process.env.REACT_APP_BASE_URL}/${firebaseFunctions.GETUSERCODE}/${uid}`;
     fetch(url)
@@ -311,7 +311,7 @@ export const getEHRUserCode = (uid: string) => {
 const lookupUser = (uid: string) => {
   if (process.env.NODE_ENV === environments.DEVELOPMENT)
     console.log(`Trying to locate 1up user id for ${uid}`);
-  let userId: string = "";
+  let userId = "";
   const url = `${process.env.REACT_APP_BASE_URL}/${firebaseFunctions.GETUSERLIST}`;
   return fetch(url)
     .then((result) => result.json())

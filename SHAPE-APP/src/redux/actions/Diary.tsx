@@ -2,24 +2,29 @@ import { GET_DIARY_ENTRIES } from "./types";
 import { collections, environments } from "../../utils/Constants";
 import { Diary } from "../../interfaces/DataTypes";
 import { formatISO } from "date-fns";
+import {
+   addDoc,
+   collection,
+   getDocs,
+   getFirestore,
+   query,
+   QuerySnapshot,
+   where,
+} from "firebase/firestore";
 
 export const submitDiary = (context: any) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
-    const fireBase = getFirebase();
-    const fireStore = fireBase.firestore();
+  return (dispatch: Function, getStates: Function) => {
+    const firestore = getFirestore();
     const state = getStates();
-    const participantId = state.firebase.profile.participantId;
-    const org = state.firebase.profile.org;
+    const userId = state.firebase.auth.uid;
     const docData = {
-      participantId,
-      org: org,
       dateWritten: formatISO(new Date()),
+      userId: userId,
       ...context,
     };
-    fireStore
-      .collection(collections.PARTICIPANT_DIARY)
-      .add(docData)
-      .then(function () {
+    const collectionRef = collection(firestore, collections.PARTICIPANT_DIARY);
+    addDoc(collectionRef, docData)
+      .then(() => {
         if (process.env.NODE_ENV === environments.DEVELOPMENT)
           console.log("Document successfully written!");
       })
@@ -29,25 +34,27 @@ export const submitDiary = (context: any) => {
   };
 };
 
-export const getDiaryEntries = (participantId: string, org: string) => {
-  return (dispatch: Function, getStates: Function, getFirebase: Function) => {
-    const fireBase = getFirebase();
-    const fireStore = fireBase.firestore();
-    const data: Array<Diary> = [];
-    fireStore
-      .collection("participant-diary")
-      .where("participantId", "==", participantId)
-      .where("org", "==", org)
-      .get()
-      .then(function (querySnapshot: any) {
-        querySnapshot.forEach(function (doc: any) {
-          let diary = doc.data();
-          data.push(diary);
+export const getDiaryEntries = () => {
+  return (dispatch: Function, getStates: Function) => {
+    const firestore = getFirestore();
+    const diaries: Array<Diary> = [];
+    const state = getStates();
+    const userId = state.firebase.auth.uid;
+
+    const q  = query(
+       collection(firestore, collections.PARTICIPANT_DIARY),
+       where("userId", "==", userId),
+    )
+    getDocs(q)
+      .then((querySnapshot: QuerySnapshot) => {
+        querySnapshot.forEach((document: any) => {
+          const diary = document.data();
+          diaries.push(diary);
         });
-        dispatch({ type: GET_DIARY_ENTRIES, data });
+        dispatch({ type: GET_DIARY_ENTRIES, diaries });
       })
-      .catch(function (error: any) {
-        console.error("Error getting documents: ", error);
+      .catch((error: any) => {
+        console.error("Error getting private diary entries: ", error);
       });
   };
 };

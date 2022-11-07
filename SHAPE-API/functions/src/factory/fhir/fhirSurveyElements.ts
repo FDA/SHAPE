@@ -1,4 +1,4 @@
-import { isEmptyObject } from "./utils";
+import { isEmptyObject, guid } from "./utils";
 
 export function FHIRSurvey(s: any) {
    const {
@@ -13,6 +13,7 @@ export function FHIRSurvey(s: any) {
       name,
    } = s;
    return {
+      fullUrl: `Survey/${guid()}`,
       resource: {
          resourceType: "Questionnaire",
          meta: {

@@ -17,7 +17,7 @@ interface PassedProps {
 
 class LoginCardContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       darkMode,
       firebaseLoggedIn,
       emailVerificationResendSuccess,

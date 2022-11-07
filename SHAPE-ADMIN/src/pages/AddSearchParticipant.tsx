@@ -13,14 +13,14 @@ import {
     IonCard,
     IonCardContent
 } from '@ionic/react';
-import {isEmptyObject} from '../utils/Utils';
-import React, {Component} from 'react';
-import {getAllParticipants} from '../utils/API';
-import {connect} from 'react-redux';
-import {updateSurvey} from '../redux/actions/Survey';
-import {withRouter, RouteComponentProps} from 'react-router-dom';
-import {cloneDeep} from 'lodash';
-import {Survey, Participant} from '../interfaces/DataTypes';
+import { isEmptyObject } from '../utils/Utils';
+import React, { Component } from 'react';
+import { getAllParticipants } from '../utils/API';
+import { connect } from 'react-redux';
+import { updateSurvey } from '../redux/actions/Survey';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { cloneDeep } from 'lodash';
+import { Survey, Participant } from '../interfaces/DataTypes';
 
 interface ReduxProps extends RouteComponentProps {
     updateSurvey: Function;
@@ -54,17 +54,15 @@ class AddSearchParticipant extends Component<ReduxProps, State> {
                 return elem !== participant.participantId;
             });
         }
-        this.setState({checkedList: tempList});
+        this.setState({ checkedList: tempList });
     };
 
     add = () => {
-        let {survey} = this.props;
+        let { survey } = this.props;
         let surveyId = survey.id;
-        let participants = !isEmptyObject(survey.participants)
-            ? cloneDeep(survey.participants)
-            : [];
+        let participants = !isEmptyObject(survey.participants) ? cloneDeep(survey.participants) : [];
 
-        let {checkedList} = this.state;
+        let { checkedList } = this.state;
 
         for (let index in checkedList) {
             participants.push(checkedList[index]);
@@ -77,34 +75,33 @@ class AddSearchParticipant extends Component<ReduxProps, State> {
     };
 
     handleSearchChange(text: string) {
-        this.setState({searchText: text});
+        this.setState({ searchText: text });
     }
 
     load() {
-        let {survey} = this.props;
+        let { survey } = this.props;
         this.setState({
             participantList: [],
             checkedList: []
         });
         let participantList: Participant[] = [];
-        let currentParticipants = !isEmptyObject(survey.participants)
-            ? survey.participants
-            : [];
+        let currentParticipants = !isEmptyObject(survey.participants) ? survey.participants : [];
 
         getAllParticipants()
             .then((snapshot: any) => {
                 snapshot.forEach((doc: any) => {
                     let participant = doc.data;
                     // makes sure that you cannot select participant already added to your survey
-                    if (
-                        currentParticipants.indexOf(participant.participantId) <
-                        0
-                    ) {
+                    if (currentParticipants.indexOf(participant.participantId) < 0) {
                         participantList.push(participant);
                     }
                 });
 
-                this.setState({participantList: participantList});
+                this.setState({
+                    participantList: [...participantList].sort((p1: any, p2: any) =>
+                        p1.participantId > p2.participantId ? 1 : -1
+                    )
+                });
             })
             .catch((err: any) => {
                 console.error('Error getting documents', err);
@@ -113,11 +110,11 @@ class AddSearchParticipant extends Component<ReduxProps, State> {
 
     finalSearch() {
         let searchText = this.state.searchText;
-        this.setState({finalSearchText: searchText});
+        this.setState({ finalSearchText: searchText });
     }
 
     clear() {
-        this.setState({searchText: '', finalSearchText: ''});
+        this.setState({ searchText: '', finalSearchText: '' });
     }
 
     componentDidMount() {
@@ -125,43 +122,34 @@ class AddSearchParticipant extends Component<ReduxProps, State> {
     }
 
     render = () => {
-        let {participantList, searchText, finalSearchText} = this.state;
+        let { participantList, searchText, finalSearchText } = this.state;
 
         return (
             <>
-                <IonHeader>
+                <IonHeader aria-label='Search and Add'>
                     <IonToolbar>
                         <IonList>
-                            <IonListHeader>
-                                <IonCol size="3">
+                            <IonListHeader aria-label='Search and Add list'>
+                                <IonCol size='3'>
                                     <IonTitle>Search and Add</IonTitle>
                                 </IonCol>
-                                <IonCol size="4">
+                                <IonCol size='4'>
                                     <IonSearchbar
                                         value={searchText}
                                         onIonChange={(e: any) =>
-                                            this.handleSearchChange(
-                                                e.detail.value!
-                                            )
+                                            this.handleSearchChange(e.detail.value!)
                                         }></IonSearchbar>
                                 </IonCol>
-                                <IonCol size="1">
-                                    <IonButton
-                                        onClick={() => this.finalSearch()}>
-                                        Search
-                                    </IonButton>
+                                <IonCol size='1'>
+                                    <IonButton onClick={() => this.finalSearch()}>Search</IonButton>
                                 </IonCol>
-                                <IonCol size="1">
-                                    <IonButton
-                                        onClick={() => this.clear()}
-                                        color="secondary">
+                                <IonCol size='1'>
+                                    <IonButton onClick={() => this.clear()} color='secondary'>
                                         Clear
                                     </IonButton>
                                 </IonCol>
-                                <IonCol size="3">
-                                    <IonButton
-                                        fill="solid"
-                                        onClick={() => this.add()}>
+                                <IonCol size='3'>
+                                    <IonButton fill='solid' onClick={() => this.add()}>
                                         Add Respondent(s)
                                     </IonButton>
                                 </IonCol>
@@ -171,10 +159,8 @@ class AddSearchParticipant extends Component<ReduxProps, State> {
                 </IonHeader>
                 <IonList>
                     {isEmptyObject(finalSearchText) && (
-                        <IonCard style={{textAlign: 'center'}}>
-                            <IonCardContent>
-                                Search to populate participants.
-                            </IonCardContent>
+                        <IonCard style={{ textAlign: 'center' }}>
+                            <IonCardContent>Search to populate participants.</IonCardContent>
                         </IonCard>
                     )}
                     {!isEmptyObject(finalSearchText) &&
@@ -188,34 +174,22 @@ class AddSearchParticipant extends Component<ReduxProps, State> {
                                 return (
                                     <IonItem
                                         key={participant.participantId}
-                                        color={
-                                            !isEmptyObject(participant.optedOut)
-                                                ? 'medium'
-                                                : ''
-                                        }>
+                                        color={!isEmptyObject(participant.optedOut) ? 'medium' : ''}>
                                         <IonLabel>
                                             {participant.participantId}{' '}
-                                            {!isEmptyObject(
-                                                participant.optedOut
-                                            )
-                                                ? ' (Opted Out}'
-                                                : ''}
+                                            {!isEmptyObject(participant.optedOut) ? ' (Opted Out}' : ''}
                                         </IonLabel>
                                         <IonCheckbox
                                             disabled={
-                                                !isEmptyObject(
-                                                    participant.optedOut
-                                                )
+                                                !isEmptyObject(participant.optedOut)
                                                     ? participant.optedOut
                                                     : false
                                             }
-                                            slot="start"
-                                            color="primary"
+                                            slot='start'
+                                            color='primary'
+                                            title='Add Question'
                                             onClick={(e: any) => {
-                                                this.handleChange(
-                                                    e,
-                                                    participant
-                                                );
+                                                this.handleChange(e, participant);
                                             }}
                                         />
                                     </IonItem>
@@ -241,7 +215,4 @@ function mapDispatchToProps(dispatch: any) {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withRouter(AddSearchParticipant));
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(AddSearchParticipant));

@@ -1,10 +1,10 @@
-import React, {Component, SyntheticEvent} from 'react';
-import {connect} from 'react-redux';
-import {withStyles} from '@material-ui/core/styles';
-import {logout} from '../redux/actions/Authentication';
-import {IonButton} from '@ionic/react';
-import {withRouter, RouteComponentProps} from 'react-router-dom';
-import {routes} from '../utils/Constants';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { withStyles } from '@material-ui/core/styles';
+import { logout } from '../redux/actions/Authentication';
+import { IonButton } from '@ionic/react';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { routes } from '../utils/Constants';
 
 const styles = () => ({
     button: {
@@ -26,26 +26,23 @@ interface PassedProps extends RouteComponentProps {
 interface State {}
 
 class LoginLogout extends Component<PassedProps, State> {
-    handleLogoutClick = (event: SyntheticEvent) => {
+    handleLogoutClick = () => {
         let parent = this;
         localStorage.removeItem('user');
         this.props.logout();
-        parent.props.history.push({pathname: routes.LOGIN});
+        parent.props.history.push({ pathname: routes.LOGIN });
     };
 
     render() {
-        const {loggedIn} = this.props;
+        const { loggedIn } = this.props;
         return (
-            <span>
+            <div>
                 {loggedIn && (
-                    <IonButton
-                        id="logout"
-                        style={{margin: '12px'}}
-                        onClick={this.handleLogoutClick}>
+                    <IonButton style={{ margin: '12px' }} onClick={this.handleLogoutClick}>
                         Logout
                     </IonButton>
                 )}
-            </span>
+            </div>
         );
     }
 }
@@ -60,7 +57,4 @@ const mapDispatchToProps = (dispatch: any) => ({
     }
 });
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withStyles(styles)(withRouter(LoginLogout)));
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(withRouter(LoginLogout)));

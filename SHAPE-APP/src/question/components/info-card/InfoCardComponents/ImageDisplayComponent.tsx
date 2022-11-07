@@ -1,7 +1,7 @@
 import React from "react";
 import { isEmptyObject } from "../../../../utils/Utils";
-import * as firebase from "firebase";
 import { InfoCardImageSection } from "../../../../interfaces/DataTypes";
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
 
 interface PassedProps {
   section: InfoCardImageSection;
@@ -24,13 +24,14 @@ class ImageDisplayComponent extends React.Component<
   }
 
   getImage(org: string, storageId: string) {
-    var storage = firebase.storage();
-    var storageRef = storage.ref(`${org}`);
-    return storageRef.child(`/image/${storageId}`).getDownloadURL();
+    const fbStorage = getStorage();
+    const storageRef = ref(fbStorage, `${org}`);
+    const fileRef = ref(storageRef, `/image/${storageId}`);
+    return getDownloadURL(fileRef);
   }
 
   UNSAFE_componentWillMount() {
-    let { section, org } = this.props;
+    const { section, org } = this.props;
     if (
       !isEmptyObject(section.value) &&
       !section.value.includes("data:image")
@@ -50,7 +51,7 @@ class ImageDisplayComponent extends React.Component<
   }
 
   UNSAFE_componentWillReceiveProps(nextProps: PassedProps) {
-    let { section, org } = nextProps;
+    const { section, org } = nextProps;
     if (
       !isEmptyObject(section.value) &&
       !section.value.includes("data:image")
@@ -70,7 +71,7 @@ class ImageDisplayComponent extends React.Component<
   }
 
   render() {
-    let { imageSrc } = this.state;
+    const { imageSrc } = this.state;
 
     if (!isEmptyObject(imageSrc)) {
       return <img alt={"info"} src={imageSrc} />;

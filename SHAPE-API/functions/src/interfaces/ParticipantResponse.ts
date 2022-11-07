@@ -9,6 +9,8 @@ export interface ParticipantResponse {
     complete?:boolean,
     responses?:Response[],
     org: string,
+    userId: string,
+    profileId?: string,
 }
 
 interface Response {

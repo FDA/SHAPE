@@ -1,13 +1,9 @@
-import React, {Component} from 'react';
-import {RouteComponentProps, withRouter} from 'react-router-dom';
-import {IonCardContent, IonIcon, IonText} from '@ionic/react';
-import {addCircle} from 'ionicons/icons';
-import {Rule} from '../ruleGenerator';
-import {
-    QuestionRule,
-    QuestionnaireQuestion,
-    Options
-} from '../interfaces/DataTypes';
+import React, { Component } from 'react';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { IonCardContent, IonIcon, IonItem, IonLabel, IonText } from '@ionic/react';
+import { addCircle } from 'ionicons/icons';
+import { Rule } from '../ruleGenerator';
+import { QuestionRule, QuestionnaireQuestion, Options } from '../interfaces/DataTypes';
 import RuleDialog from './RuleDialog';
 
 interface RPProps extends RouteComponentProps {
@@ -18,8 +14,8 @@ interface RPProps extends RouteComponentProps {
     questionList: Array<QuestionnaireQuestion>;
     questionId?: string;
     questionType?: string;
-    min?: number;
-    max?: number;
+    min?: string;
+    max?: string;
     options?: Options;
 }
 
@@ -42,12 +38,12 @@ class RulePanel extends Component<RPProps, RPState> {
     }
 
     addRule = () => {
-        let {rules} = this.props;
+        const { rules } = this.props;
         let key = rules.length;
         if (rules.length > 0) {
             key = rules[rules.length - 1].id + 1;
         }
-        let ruleJson: QuestionRule = {
+        const ruleJson: QuestionRule = {
             id: key,
             skipTo: '',
             ruleType: 'or',
@@ -61,15 +57,15 @@ class RulePanel extends Component<RPProps, RPState> {
                 ]
             }
         };
-        let newRules = [...this.props.rules, ruleJson];
+        const newRules = [...this.props.rules, ruleJson];
         this.props.setRules(newRules, this.props.questionId);
-        this.setState({isNew: true, editingRule: null});
+        this.setState({ isNew: true, editingRule: null });
     };
 
     deleteRule = (rule: any) => {
-        let {id} = rule.props.ruleJson;
-        let tempRules = this.props.rules;
-        let index = tempRules.findIndex((r) => r.id === id);
+        const { id } = rule.props.ruleJson;
+        const tempRules = this.props.rules;
+        const index = tempRules.findIndex((r) => r.id === id);
         if (index > -1) {
             tempRules.splice(index, 1);
             this.props.setRules([...tempRules], this.props.questionId);
@@ -77,20 +73,20 @@ class RulePanel extends Component<RPProps, RPState> {
     };
 
     deleteEntry = (ruleJson: QuestionRule, entryId: number) => {
-        let {id} = ruleJson; // id of rule
-        let tempRules = this.props.rules;
-        let index = tempRules.findIndex((rule) => rule.id === id);
+        const { id } = ruleJson; // id of rule
+        const tempRules = this.props.rules;
+        const index = tempRules.findIndex((rule) => rule.id === id);
         if (index > -1) {
-            let currentRule = tempRules[index];
+            const currentRule = tempRules[index];
             currentRule.expression.entries.splice(entryId, 1);
             this.props.setRules([...tempRules], this.props.questionId);
         }
     };
 
     updateRule = (rule: QuestionRule) => {
-        let {id} = rule;
-        let tempRules = this.props.rules;
-        let index = tempRules.findIndex((r) => r.id === id);
+        const { id } = rule;
+        const tempRules = this.props.rules;
+        const index = tempRules.findIndex((r) => r.id === id);
         if (index > -1) {
             tempRules[index] = rule;
             this.props.setRules([...tempRules], this.props.questionId);
@@ -98,15 +94,14 @@ class RulePanel extends Component<RPProps, RPState> {
     };
 
     generateRulesList = () => {
-        let result = [];
-        let {rules} = this.props;
-        let {questionId} = this.props;
-        for (let i = 0; i < rules.length; i++) {
-            let newRule = (
+        const { rules, questionId } = this.props;
+        const ruleList: any = [];
+        rules.forEach((rule: any, i: number) => {
+            ruleList.push(
                 <Rule
                     key={`${questionId}-${i}`}
                     questionList={this.props.questionList}
-                    ruleJson={rules[i]}
+                    ruleJson={rule}
                     deleteRule={this.deleteRule}
                     updateRule={this.updateRule}
                     deleteEntry={this.deleteEntry}
@@ -118,14 +113,12 @@ class RulePanel extends Component<RPProps, RPState> {
                     questionType={this.props.questionType}
                 />
             );
-            result.push(newRule);
-        }
-
-        return result;
+        });
+        return ruleList;
     };
 
     selectEditRule = (rule: any) => {
-        let {ruleJson} = rule.props;
+        const { ruleJson } = rule.props;
         this.setState({
             displayedRule: ruleJson,
             showDialogue: true,
@@ -134,19 +127,17 @@ class RulePanel extends Component<RPProps, RPState> {
     };
 
     handleCancel = () => {
-        const {rules} = this.props;
-        const {isNew, editingRule} = this.state;
+        const { rules } = this.props;
+        const { isNew, editingRule } = this.state;
         try {
             if (isNew) {
                 rules.pop();
                 this.props.setRules(rules, this.props.questionId);
-                this.setState({isNew: false, editingRule: null});
+                this.setState({ isNew: false, editingRule: null });
             } else {
                 const restoredRule = JSON.parse(editingRule);
-                let tempRules = this.props.rules;
-                let index = tempRules.findIndex(
-                    (rule) => rule.id === restoredRule.id
-                );
+                const tempRules = this.props.rules;
+                const index = tempRules.findIndex((rule) => rule.id === restoredRule.id);
                 if (index > -1) {
                     tempRules[index] = restoredRule;
                     this.props.setRules([...tempRules], this.props.questionId);
@@ -160,7 +151,8 @@ class RulePanel extends Component<RPProps, RPState> {
         });
     };
 
-    handleClose = () => {
+    handleClose = (reason: string) => {
+        if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
         this.setState({
             showDialogue: false,
             isNew: false
@@ -168,10 +160,10 @@ class RulePanel extends Component<RPProps, RPState> {
     };
 
     handleOpen = () => {
-        let self = this;
-        let setNewRule = new Promise((resolve, reject) => {
+        const self = this;
+        const setNewRule = new Promise((resolve, reject) => {
             self.addRule();
-            let wait = setTimeout(() => {
+            const wait = setTimeout(() => {
                 clearTimeout(wait);
                 resolve('Done');
             }, 200);
@@ -179,8 +171,8 @@ class RulePanel extends Component<RPProps, RPState> {
 
         setNewRule
             .then((res) => {
-                let n = self.props.rules.length;
-                let currentDisplayedRule = self.props.rules[n - 1];
+                const n = self.props.rules.length;
+                const currentDisplayedRule = self.props.rules[n - 1];
                 self.setState({
                     displayedRule: currentDisplayedRule,
                     showDialogue: true
@@ -192,23 +184,33 @@ class RulePanel extends Component<RPProps, RPState> {
     };
 
     render() {
+        const {
+            rules,
+            editing,
+            questionList,
+            questionId,
+            questionType,
+            saveRule,
+            min,
+            max,
+            options
+        } = this.props;
+        const { showDialogue, displayedRule } = this.state;
+
         return (
             <IonCardContent>
-                <IonText color="dark">
-                    {this.props.rules.length === 0 && 'None'}
-                </IonText>
-                {this.props.editing && (
-                    <IonIcon
-                        icon={addCircle}
-                        style={{
-                            fontSize: '20px',
-                            cursor: 'pointer'
-                        }}
-                        onClick={this.handleOpen}
-                    />
+                {!editing && <IonText color='dark'>{rules.length === 0 && 'None'}</IonText>}
+                {rules.length > 0 && <>{this.generateRulesList()}</>}
+                {editing && (
+                    <IonItem button style={{ width: '150px' }} lines='none' onClick={this.handleOpen}>
+                        <IonIcon
+                            icon={addCircle}
+                            style={{ cursor: 'pointer', paddingRight: '5px', paddingBottom: '5px' }}
+                        />
+                        <IonLabel style={{ cursor: 'pointer' }}>Add Rule</IonLabel>
+                    </IonItem>
                 )}
-                {this.props.rules.length > 0 && <>{this.generateRulesList()}</>}
-                {this.state.showDialogue && (
+                {showDialogue && (
                     <RuleDialog
                         deleteRule={this.deleteRule}
                         deleteEntry={this.deleteEntry}
@@ -216,15 +218,15 @@ class RulePanel extends Component<RPProps, RPState> {
                         handleClose={this.handleClose}
                         handleCancel={this.handleCancel}
                         selectEditRule={this.selectEditRule}
-                        questionId={this.props.questionId}
-                        questionList={this.props.questionList}
-                        open={this.state.showDialogue}
-                        ruleJson={this.state.displayedRule}
-                        saveRule={this.props.saveRule}
-                        questionType={this.props.questionType}
-                        min={this.props.min}
-                        max={this.props.max}
-                        options={this.props.options}
+                        questionId={questionId}
+                        questionList={questionList}
+                        open={showDialogue}
+                        ruleJson={displayedRule}
+                        saveRule={saveRule}
+                        questionType={questionType}
+                        min={min}
+                        max={max}
+                        options={options}
                     />
                 )}
             </IonCardContent>

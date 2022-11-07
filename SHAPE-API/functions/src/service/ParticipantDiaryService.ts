@@ -1,13 +1,13 @@
-import {ParticipantDiary} from "../interfaces";
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
+import {ParticipantDiary} from "../interfaces";
 
-admin.initializeApp(functions.config().firebase, 'participant-diary');
-
+initializeApp(functions.config().firebase, 'participant-diary');
 
 export class ParticipantDiaryService {
-    db = admin.firestore();
+    db = getFirestore();
     collection = "participant-diary";
 
     private processParticipantDiary(participantQuerySnapshot:any, callback: CallbackFunction) {
@@ -59,11 +59,12 @@ export class ParticipantDiaryService {
     firestoreCollection(collectionName: string): FirebaseFirestore.Query<FirebaseFirestore.DocumentData> {
         return this.db.collection(collectionName);
     }
+    
     public complexQuery(org:string, query: any, callback: CallbackFunction) {
         if(org === "ALL") {
             let request = this.firestoreCollection(this.collection);
 
-            for (let q of query) {
+            for (const q of query) {
                 request = request.where(q.key, q.operator, q.value);
             }
             request
@@ -77,7 +78,7 @@ export class ParticipantDiaryService {
         } else {
             let request = this.firestoreCollection(this.collection);
 
-            for (let q of query) {
+            for (const q of query) {
                 request = request.where(q.key, q.operator, q.value);
             }
             request

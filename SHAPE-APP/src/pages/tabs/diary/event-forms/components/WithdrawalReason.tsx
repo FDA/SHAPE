@@ -7,7 +7,7 @@ interface PassedProps {
 }
 
 export const WithdrawalReason = (props: PassedProps) => {
-  let { value, handleInputChange } = props;
+  const { value, handleInputChange } = props;
   return (
     <IonItem
       style={{

@@ -8,9 +8,7 @@ class SelectFactory extends BaseQuestionFactory {
   createJSX(
     question: QuestionnaireQuestion,
     valueEventHandler: Function,
-    defaultValue: string,
-    clearValue: Function,
-    currentAnswerValue: Function
+    defaultValue: string
   ): ReactNode {
     return question.type === questionTypes.SELECT ? (
       <CustomSelect

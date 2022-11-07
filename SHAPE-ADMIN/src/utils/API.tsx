@@ -5,19 +5,27 @@ import {
     QuestionnaireQuestion,
     Question,
     Survey,
-    User
+    User,
+    Inbox
 } from '../interfaces/DataTypes';
-import {guid, isEmptyObject} from './Utils';
-import {dateFormats} from './Constants';
-import {generate} from 'generate-password';
-import {format} from 'date-fns';
+import { guid } from './Utils';
+import { dateFormats } from './Constants';
+import { generate } from 'generate-password-browser';
+import { format } from 'date-fns';
 import firebaseConfig from '../config/firebase.json';
-
-const firebase = require('firebase');
-require('firebase/firestore');
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import {
+    createUserWithEmailAndPassword,
+    getAuth,
+    onAuthStateChanged,
+    sendPasswordResetEmail,
+    signOut
+} from 'firebase/auth';
+import { addDoc, collection, doc, getDocs, getFirestore, setDoc } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
 
 export async function getNotifications() {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/message`;
     const headers = {
         'Content-Type': 'application/json',
@@ -34,15 +42,13 @@ export async function getNotifications() {
 }
 
 export function getEnvVar(data: any, context: any) {
-    let getVar = firebase.functions().httpsCallable('getEnvVar');
+    const fbFunctions = getFunctions();
+    const getVar = httpsCallable(fbFunctions, 'getEnvVar');
+    //@ts-ignore
     return getVar(data, context);
 }
 
-export function sendNotification(
-    subject: string,
-    message: string,
-    deviceTokens: any[]
-) {
+export function sendNotification(subject: string, message: string, deviceTokens: any[]) {
     let url = `${process.env.REACT_APP_BASE_URL}/sendNotification`;
     const headers = {
         'Content-Type': 'application/json'
@@ -68,7 +74,7 @@ export function sendNotification(
 }
 
 export async function getUserInfo(uid: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/user/${uid}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -81,11 +87,15 @@ export async function getUserInfo(uid: string) {
         .then((res: any) => res.json())
         .then((data: any) => {
             return data.DATA;
+        })
+        .catch((err: any) => {
+            console.error(err);
+            return err;
         });
 }
 
 export async function createUser(uid: string, user: User) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/user/${uid}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -98,22 +108,30 @@ export async function createUser(uid: string, user: User) {
     });
 }
 
-export async function addNotificationToDatabase(d: any) {
-    let data = {...d};
+export async function addNotificationToDatabase(d: any, org: string, publicAccess: boolean) {
+    let data = { ...d };
 
-    data.emailRecipients = data.emailRecipients.map((recipient: any) => {
-        return recipient.participantId;
-    });
+    if (publicAccess) {
+        data.pushRecipients = data.pushRecipients.map((e: User) => e.docId);
+        data.inAppRecipients = data.inAppRecipients.map((e: User) => e.docId);
+        data.emailRecipients = data.emailRecipients.map((e: User) => e.docId);
+        data.smsRecipients = data.smsRecipients.map((e: User) => e.docId);
+    } else {
+        data.pushRecipients = data.pushRecipients.map(
+            (e: User) => e.participantId.filter((elem) => elem.org === org)[0].id
+        );
+        data.inAppRecipients = data.inAppRecipients.map(
+            (e: User) => e.participantId.filter((elem) => elem.org === org)[0].id
+        );
+        data.emailRecipients = data.emailRecipients.map(
+            (e: User) => e.participantId.filter((elem) => elem.org === org)[0].id
+        );
+        data.smsRecipients = data.smsRecipients.map(
+            (e: User) => e.participantId.filter((elem) => elem.org === org)[0].id
+        );
+    }
 
-    data.smsRecipients = data.smsRecipients.map((recipient: any) => {
-        return recipient.participantId;
-    });
-
-    data.pushRecipients = data.pushRecipients.map((recipient: any) => {
-        return recipient.participantId;
-    });
-
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/message`;
     const headers = {
         'Content-Type': 'application/json',
@@ -127,17 +145,12 @@ export async function addNotificationToDatabase(d: any) {
 }
 
 export function sendEmailNotification(data: any) {
-    var sendEmailNotificationFunction = firebase
-        .functions()
-        .httpsCallable('sendEmailNotification');
+    const fbFunctions = getFunctions();
+    var sendEmailNotificationFunction = httpsCallable(fbFunctions, 'sendEmailNotification');
     return sendEmailNotificationFunction(data);
 }
 
-export function sendTextNotification(
-    subject: any,
-    message: any,
-    numbers: string[]
-) {
+export function sendTextNotification(subject: any, message: any, numbers: string[]) {
     let url = `${process.env.REACT_APP_BASE_URL}/sendSms`;
     const headers = {
         'Content-Type': 'application/json'
@@ -156,18 +169,8 @@ export function sendTextNotification(
     });
 }
 
-export function disableUser(uid: string) {
-    var disableUserFunction = firebase.functions().httpsCallable('disableUser');
-    return disableUserFunction({uid: uid});
-}
-
-export function enableUser(uid: string) {
-    var enableUserFunction = firebase.functions().httpsCallable('enableUser');
-    return enableUserFunction({uid: uid});
-}
-
 export async function storeImage(image: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/image`;
     const headers = {
         'Content-Type': 'application/json',
@@ -181,7 +184,7 @@ export async function storeImage(image: any) {
 }
 
 export async function getImage(storageId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/image/${storageId}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -198,7 +201,7 @@ export async function getImage(storageId: string) {
 }
 
 export async function getAllImageMetadata() {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/image`;
     const headers = {
         'Content-Type': 'application/json',
@@ -215,7 +218,7 @@ export async function getAllImageMetadata() {
 }
 
 export async function createQuestionnaire(questionnaire: Questionnaire) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/questionnaire`;
     const headers = {
         'Content-Type': 'application/json',
@@ -229,7 +232,7 @@ export async function createQuestionnaire(questionnaire: Questionnaire) {
 }
 
 export async function getQuestionnaires(surveyId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/questionnaire/query`;
     let query = {
         query: [
@@ -261,10 +264,8 @@ export async function getQuestionnaires(surveyId: string) {
 }
 
 export async function deleteQuestionnaire(questionnaireId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem(
-        'apiUrl'
-    )}/questionnaire/${questionnaireId}`;
+    const tken = await getCurrentUserToken();
+    let url = `${localStorage.getItem('apiUrl')}/questionnaire/${questionnaireId}`;
     const headers = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${tken}`
@@ -276,7 +277,7 @@ export async function deleteQuestionnaire(questionnaireId: string) {
 }
 
 export async function deleteSurvey(surveyId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/survey/${surveyId}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -289,7 +290,7 @@ export async function deleteSurvey(surveyId: string) {
 }
 
 export async function getOpenQuestionnaires(surveyId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/questionnaire/query`;
     let query = {
         query: [
@@ -326,10 +327,8 @@ export async function getOpenQuestionnaires(surveyId: string) {
 }
 
 export async function getQuestionnaire(questionnaireId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem(
-        'apiUrl'
-    )}/questionnaire/${questionnaireId}`;
+    const tken = await getCurrentUserToken();
+    let url = `${localStorage.getItem('apiUrl')}/questionnaire/${questionnaireId}`;
     const headers = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${tken}`
@@ -345,7 +344,7 @@ export async function getQuestionnaire(questionnaireId: string) {
 }
 
 export async function getQuestionnaireResponses(questionnaireId: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/participant-response/query`;
     let query = {
         query: [
@@ -371,11 +370,8 @@ export async function getQuestionnaireResponses(questionnaireId: any) {
         });
 }
 
-export async function getParticipantResponses(
-    surveyId: any,
-    participantId: any
-) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+export async function getParticipantResponses(surveyId: any, participantId: any) {
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/participant-response/query`;
     let query = {
         query: [
@@ -407,7 +403,7 @@ export async function getParticipantResponses(
 }
 
 export async function getDiaryResponses(id: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/participant-diary/query`;
     let query = {
         query: [
@@ -433,11 +429,8 @@ export async function getDiaryResponses(id: any) {
         });
 }
 
-export async function getEnrolledQuestionnaires(
-    surveyId: any,
-    participantId: any
-) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+export async function getEnrolledQuestionnaires(surveyId: any, participantId: any) {
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/questionnaire/query`;
     let query = {
         query: [
@@ -450,122 +443,9 @@ export async function getEnrolledQuestionnaires(
                 key: 'participants',
                 operator: 'array-contains',
                 value: participantId
-            }
-        ]
-    };
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-    return fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(query)
-    })
-        .then((res: any) => res.json())
-        .then((data: any) => {
-            return data.DATA;
-        });
-}
-
-export async function editQuestionnaire(questionnaireId: string, changes: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem(
-        'apiUrl'
-    )}/questionnaire/${questionnaireId}`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-
-    return fetch(url, {
-        method: 'PUT',
-        headers: headers,
-        body: JSON.stringify(changes)
-    });
-}
-
-export async function createParticipant(participant: Participant) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem('apiUrl')}/participant`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-    return fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(participant)
-    });
-}
-
-export async function getParticipant(participantId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem(
-        'apiUrl'
-    )}/participant?participantId=${participantId}`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-    return fetch(url, {
-        method: 'GET',
-        headers: headers
-    })
-        .then((res: any) => res.json())
-        .then((data: any) => {
-            return data.DATA;
-        });
-}
-
-export async function getAllParticipants() {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem('apiUrl')}/participant/`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-    return fetch(url, {
-        method: 'GET',
-        headers: headers
-    })
-        .then((res: any) => res.json())
-        .then((data: any) => {
-            return data.DATA;
-        });
-}
-
-export async function getUser(participantId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem(
-        'apiUrl'
-    )}/user?participantId=${participantId}`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-    return fetch(url, {
-        method: 'GET',
-        headers: headers
-    })
-        .then((res: any) => res.json())
-        .then((data: any) => {
-            return data.DATA;
-        });
-}
-
-export async function getActiveUser(participantId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem('apiUrl')}/user/query`;
-    let query = {
-        query: [
-            {
-                key: 'participantId',
-                operator: '==',
-                value: participantId
             },
             {
-                key: 'active',
+                key: 'open',
                 operator: '==',
                 value: true
             }
@@ -586,8 +466,71 @@ export async function getActiveUser(participantId: string) {
         });
 }
 
+export async function editQuestionnaire(questionnaireId: string, changes: any) {
+    const tken = await getCurrentUserToken();
+    let url = `${localStorage.getItem('apiUrl')}/questionnaire/${questionnaireId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tken}`
+    };
+
+    return fetch(url, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(changes)
+    });
+}
+
+export async function createParticipant(participant: Participant) {
+    const tken = await getCurrentUserToken();
+    let url = `${localStorage.getItem('apiUrl')}/participant`;
+    const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tken}`
+    };
+    return fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(participant)
+    });
+}
+
+export async function getParticipant(participantId: string) {
+    const tken = await getCurrentUserToken();
+    let url = `${localStorage.getItem('apiUrl')}/participant?participantId=${participantId}`;
+    const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tken}`
+    };
+    return fetch(url, {
+        method: 'GET',
+        headers: headers
+    })
+        .then((res: any) => res.json())
+        .then((data: any) => {
+            return data.DATA;
+        });
+}
+
+export async function getAllParticipants() {
+    const tken = await getCurrentUserToken();
+    let url = `${localStorage.getItem('apiUrl')}/participant/`;
+    const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tken}`
+    };
+    return fetch(url, {
+        method: 'GET',
+        headers: headers
+    })
+        .then((res: any) => res.json())
+        .then((data: any) => {
+            return data.DATA;
+        });
+}
+
 export async function getActiveUsers() {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/user/query`;
     let query = {
         query: [
@@ -614,7 +557,7 @@ export async function getActiveUsers() {
 }
 
 export async function editUser(userId: string, changes: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/user/${userId}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -629,7 +572,7 @@ export async function editUser(userId: string, changes: any) {
 }
 
 export async function getProfiles(participantList: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/user/query`;
     let query = {
         query: [
@@ -656,7 +599,7 @@ export async function getProfiles(participantList: any) {
 }
 
 export async function createSurvey(survey: Survey) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/survey`;
     const headers = {
         'Content-Type': 'application/json',
@@ -672,7 +615,8 @@ export async function createSurvey(survey: Survey) {
 export async function getSurveys() {
     // allows token to load on app refresh
     return new Promise((resolve, reject) => {
-        firebase.auth().onAuthStateChanged(async (user: any) => {
+        const auth = getAuth();
+        onAuthStateChanged(auth, async (user: any) => {
             if (user) {
                 const tken = await user.getIdToken();
                 let url = `${localStorage.getItem('apiUrl')}/survey/query`;
@@ -710,7 +654,7 @@ export async function getSurveys() {
 }
 
 export async function getSurvey(surveyId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     const apiUrl = `${localStorage.getItem('apiUrl')}/survey/${surveyId}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -725,13 +669,12 @@ export async function getSurvey(surveyId: string) {
         const data = await result.json();
         return data.DATA;
     } else {
-        console.log(`No Data returned for query.`);
         return [];
     }
 }
 
 export async function editSurvey(surveyId: string, changes: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/survey/${surveyId}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -746,7 +689,7 @@ export async function editSurvey(surveyId: string, changes: any) {
 }
 
 export async function createQuestionTemplate(question: Question) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/question`;
     const headers = {
         'Content-Type': 'application/json',
@@ -760,7 +703,7 @@ export async function createQuestionTemplate(question: Question) {
 }
 
 export async function getQuestionTemplates() {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     const apiUrl = `${localStorage.getItem('apiUrl')}/question`;
     const headers = {
         'Content-Type': 'application/json',
@@ -780,7 +723,7 @@ export async function getQuestionTemplates() {
 }
 
 export async function editQuestionTemplate(question: QuestionnaireQuestion) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let questionId = question.id;
     delete question.id;
     delete question.order;
@@ -798,7 +741,7 @@ export async function editQuestionTemplate(question: QuestionnaireQuestion) {
 }
 
 export async function deleteQuestionTemplate(questionId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/question/${questionId}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -810,29 +753,9 @@ export async function deleteQuestionTemplate(questionId: string) {
     });
 }
 
-async function getInbox(participantId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem(
-        'apiUrl'
-    )}/inbox?participantId=${participantId}`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-    return fetch(url, {
-        method: 'GET',
-        headers: headers
-    })
-        .then((res: any) => res.json())
-        .then((data: any) => {
-            return data.DATA;
-        });
-}
-
-export async function createInbox(participantId: string, message: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+export async function createInbox(record: Inbox) {
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/inbox`;
-    let body = {participantId: participantId};
     const headers = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${tken}`
@@ -840,22 +763,7 @@ export async function createInbox(participantId: string, message: any) {
     return fetch(url, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify(body)
-    });
-}
-
-async function editInbox(docId: string, inbox: any) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
-    let url = `${localStorage.getItem('apiUrl')}/inbox/${docId}`;
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tken}`
-    };
-
-    return fetch(url, {
-        method: 'PUT',
-        headers: headers,
-        body: JSON.stringify(inbox)
+        body: JSON.stringify(record)
     });
 }
 
@@ -863,70 +771,39 @@ export function sendToInbox(
     subject: string,
     message: string,
     timestamp: string,
-    participantIds: any[],
-    deviceTokens: any[]
+    users: User[],
+    deviceTokens: string[],
+    org: string
 ) {
-    let id = guid();
-    let record = {
-        subject: subject,
-        message: message,
-        timestamp: timestamp,
-        read: false,
-        id: id
-    };
-
     sendNotification(subject, message, deviceTokens);
 
-    participantIds.forEach((participantId: string) => {
-        return new Promise((resolve: any, reject: any) => {
-            getInbox(participantId)
-                .then((res: any) => {
-                    if (res.length > 0) {
-                        let docId = res[0].id;
-                        let data = res[0].data;
-                        let messages: any = !isEmptyObject(data)
-                            ? data.messages
-                            : [];
-                        messages.push(record);
-
-                        editInbox(docId, {messages: messages})
-                            .then((r: any) => {
-                                resolve();
-                            })
-                            .catch((e: any) => {
-                                console.error(e);
-                                resolve();
-                            });
-                    } else {
-                        createInbox(participantId, record)
-                            .then((r: any) => r.json())
-                            .then((r: any) => {
-                                editInbox(r.DATA.id, {messages: [record]})
-                                    .then(() => {
-                                        resolve();
-                                    })
-                                    .catch((e: any) => {
-                                        console.error(e);
-                                        resolve();
-                                    });
-                            })
-                            .catch((e: any) => {
-                                console.error(e);
-                                resolve();
-                            });
-                    }
-                })
-                .catch((err: any) => {
-                    console.error(err);
-                });
+    users.forEach((user: User) => {
+        return new Promise<void>((resolve: any) => {
+            let filteredId = user.participantId.filter((elem) => elem.org === org);
+            let id = guid();
+            let record = {
+                subject: subject,
+                message: message,
+                timestamp: timestamp,
+                read: false,
+                id: id,
+                participantId: '',
+                userId: ''
+            };
+            record.participantId = filteredId.length > 0 ? filteredId[0].id : user.docId;
+            record.userId = user.docId;
+            createInbox(record).catch((e: any) => {
+                console.error(e);
+                resolve();
+            });
         });
     });
 
-    return Promise.all(participantIds);
+    return Promise.all(users);
 }
 
 export async function getAllEHRReceipts() {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/ehr`;
     const headers = {
         'Content-Type': 'application/json',
@@ -943,13 +820,13 @@ export async function getAllEHRReceipts() {
 }
 
 export async function getEHR(path: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/ehr/get`;
     const headers = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${tken}`
     };
-    const body = {path: path};
+    const body = { path: path };
     return fetch(url, {
         method: 'POST',
         body: JSON.stringify(body),
@@ -961,67 +838,64 @@ export async function getEHR(path: string) {
         });
 }
 
-export function getAllOrgs() {
-    const fireStore = firebase.firestore();
-    return fireStore.collection('org').get();
+export async function getAllOrgs() {
+    const firestore = getFirestore();
+    return getDocs(collection(firestore, 'org'));
 }
 
 export async function addOrg(org: Org) {
-    const fireStore = firebase.firestore();
-    return fireStore.collection('org').add(org);
+    const firestore = getFirestore();
+    return addDoc(collection(firestore, 'org'), org);
 }
 
-export function updateOrg(docId: string, org: Org) {
-    const fireStore = firebase.firestore();
-    return fireStore.collection('org').doc(docId).set(org, {merge: true});
+export async function updateOrg(docId: string, org: Org) {
+    const firestore = getFirestore();
+    const orgRef = doc(firestore, 'org', docId);
+    return setDoc(orgRef, org, { merge: true });
 }
 
 export async function checkUserExists(emailAddress: string) {
-    const fbFunctions = firebase.functions();
-    const checkUserExistsFunction = fbFunctions.httpsCallable(
-        'checkUserExists'
-    );
-    const result = await checkUserExistsFunction({email: emailAddress});
-    return {email: result.data.email, uid: result.data.uid};
+    const fbFunctions = getFunctions();
+    const checkUserExistsFunction = httpsCallable(fbFunctions, 'checkUserExists');
+    return checkUserExistsFunction({ email: emailAddress });
 }
 
 export async function setAdmin(emailAddress: string, orgId: string) {
-    const fbFunctions = firebase.functions();
-    const setAdminFunction = fbFunctions.httpsCallable('setAdmin');
-    return setAdminFunction({email: emailAddress, org: orgId});
+    const fbFunctions = getFunctions();
+    const setAdminFunction = httpsCallable(fbFunctions, 'setAdmin');
+    return setAdminFunction({ email: emailAddress, org: orgId });
 }
 
 export async function createAdminUser(org: Org) {
-    const fireStore = firebase.firestore();
     const password = generate({
         length: 10,
         uppercase: true,
         lowercase: true,
         numbers: true
     });
-    var secondaryApp = await firebase.initializeApp(firebaseConfig, guid());
-    const createResult = await secondaryApp
-        .auth()
-        .createUserWithEmailAndPassword(org.adminEmail, password);
-    secondaryApp.auth().signOut();
+    const secondaryApp = initializeApp(firebaseConfig, guid());
+    const secondaryAuth = getAuth(secondaryApp);
+    const createResult = await createUserWithEmailAndPassword(secondaryAuth, org.adminEmail, password);
+    signOut(secondaryAuth);
     let retVal = null;
     if (createResult) {
         try {
-            await fireStore
-                .collection('users')
-                .doc(createResult.user.uid)
-                .set({
-                    id: org.id,
-                    name: org.name,
-                    contactName: org.contactName,
-                    orgAdmin: true,
-                    adminEmail: org.adminEmail,
-                    active: org.active,
-                    dateCreated: format(new Date(), dateFormats.MM_dd_yyyy),
-                    userName: org.adminEmail,
-                    org: org.id
-                });
-            await firebase.auth().sendPasswordResetEmail(org.adminEmail);
+            const firestore = getFirestore();
+            const userRef = doc(firestore, 'users', createResult.user.uid);
+            const userData = {
+                id: org.id,
+                name: org.name,
+                contactName: org.contactName,
+                orgAdmin: true,
+                adminEmail: org.adminEmail,
+                active: org.active,
+                dateCreated: format(new Date(), dateFormats.MM_dd_yyyy),
+                userName: org.adminEmail,
+                org: org.id
+            };
+            await setDoc(userRef, userData);
+            const auth = getAuth();
+            await sendPasswordResetEmail(auth, org.adminEmail);
             retVal = true;
         } catch (e) {
             console.error(`Unable to create user ${org.adminEmail}`);
@@ -1032,7 +906,7 @@ export async function createAdminUser(org: Org) {
 }
 
 export async function getDiaryJSONExport(surveyId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/export/diary`;
     let query = {
         query: [
@@ -1059,7 +933,7 @@ export async function getDiaryJSONExport(surveyId: string) {
 }
 
 export async function getDiaryFHIRExport(surveyId: string) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/export/diary/fhir`;
     let query = {
         query: [
@@ -1085,10 +959,8 @@ export async function getDiaryFHIRExport(surveyId: string) {
         });
 }
 
-export async function getQuestionnaireResponseJSONExport(
-    questionnaireId: string
-) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+export async function getQuestionnaireResponseJSONExport(questionnaireId: string) {
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/export/questionnaire`;
     let query = {
         query: [
@@ -1114,10 +986,8 @@ export async function getQuestionnaireResponseJSONExport(
         });
 }
 
-export async function getQuestionnaireResponseFHIRExport(
-    questionnaireId: string
-) {
-    const tken = await firebase.auth().currentUser.getIdToken(true);
+export async function getQuestionnaireResponseFHIRExport(questionnaireId: string) {
+    const tken = await getCurrentUserToken();
     let url = `${localStorage.getItem('apiUrl')}/export/questionnaire/fhir`;
     let query = {
         query: [
@@ -1142,3 +1012,26 @@ export async function getQuestionnaireResponseFHIRExport(
             return data.DATA;
         });
 }
+
+const getCurrentUserToken = async () => {
+    const auth = getAuth();
+    return auth.currentUser.getIdToken(true);
+};
+
+/*export async function triggerCloudFunction(triggerType: string) {
+    const tken = await getCurrentUserToken();
+    let url = `${process.env.REACT_APP_BASE_URL}/triggerCloudFunction`;
+    const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tken}`
+    };
+
+    const payload = {
+        triggerType
+    };
+    return fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    });
+}*/

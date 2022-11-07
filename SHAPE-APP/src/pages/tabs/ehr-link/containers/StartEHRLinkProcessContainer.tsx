@@ -28,7 +28,7 @@ interface PassedProps {
 
 class StartEHRLinkProcessContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       ehr,
       getEHRUserCodeDispatch,
       auth,

@@ -26,7 +26,7 @@ interface PassedProps {
 
 class LoginContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       authenticationDispatch,
       resetUserStateDispatch,
       isLoading,

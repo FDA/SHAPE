@@ -14,17 +14,17 @@ import {
     IonContent,
     IonCol
 } from '@ionic/react';
-import {isEmptyObject} from '../utils/Utils';
-import React, {Component} from 'react';
-import {getParticipant, getUser} from '../utils/API';
-import {connect} from 'react-redux';
-import {updateQuestionnaire} from '../redux/actions/Questionnaire';
-import {isLoading} from '../redux/actions/Navigation';
+import { isEmptyObject } from '../utils/Utils';
+import React, { Component } from 'react';
+import { getParticipant, getUserInfo } from '../utils/API';
+import { connect } from 'react-redux';
+import { updateQuestionnaire } from '../redux/actions/Questionnaire';
+import { isLoading } from '../redux/actions/Navigation';
 import LoadingScreen from '../layout/LoadingScreen';
-import {cloneDeep} from 'lodash';
-import {Questionnaire, Survey, Participant} from '../interfaces/DataTypes';
-import {routes} from '../utils/Constants';
-import {withRouter, RouteComponentProps} from 'react-router-dom';
+import { cloneDeep } from 'lodash';
+import { Questionnaire, Survey, Participant } from '../interfaces/DataTypes';
+import { routes } from '../utils/Constants';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
 
 interface ReduxProps extends RouteComponentProps {
     questionnaire: Questionnaire;
@@ -65,16 +65,15 @@ class NewQ13Participant extends Component<ReduxProps, State> {
                 return elem !== e.target.value;
             });
         }
-        this.setState({checkedList: tempList});
+        this.setState({ checkedList: tempList });
     };
 
     add = () => {
-        let {questionnaire, questionnaireId} = this.props.location.state;
-        let {checkedList} = this.state;
+        let { questionnaire } = this.props;
+        let questionnaireId = questionnaire.id;
+        let { checkedList } = this.state;
 
-        let oldParticipantList = !isEmptyObject(questionnaire.participants)
-            ? questionnaire.participants
-            : [];
+        let oldParticipantList = !isEmptyObject(questionnaire.participants) ? questionnaire.participants : [];
 
         checkedList = checkedList.concat(oldParticipantList);
         questionnaire.participants = checkedList;
@@ -85,12 +84,10 @@ class NewQ13Participant extends Component<ReduxProps, State> {
     };
 
     checkAll = () => {
-        let {allChecked, participantList} = this.state;
-        let strippedParticipantList = participantList.map(
-            (elem: Participant) => {
-                return elem.participantId;
-            }
-        );
+        let { allChecked, participantList } = this.state;
+        let strippedParticipantList = participantList.map((elem: Participant) => {
+            return elem.participantId;
+        });
         //if not checked already
         if (!allChecked) {
             this.setState({
@@ -98,21 +95,17 @@ class NewQ13Participant extends Component<ReduxProps, State> {
                 allChecked: true
             });
         } else {
-            this.setState({checkedList: [], allChecked: false});
+            this.setState({ checkedList: [], allChecked: false });
         }
     };
 
     load() {
         this.props.toggleLoadingDispatch(true);
-        let {survey, questionnaire} = this.props;
-        let {participantList} = this.state;
+        let { survey, questionnaire } = this.props;
+        let { participantList } = this.state;
         let parent = this;
-        let surveyParticipants = !isEmptyObject(survey.participants)
-            ? cloneDeep(survey.participants)
-            : [];
-        let questionnaireParticipants = !isEmptyObject(
-            questionnaire.participants
-        )
+        let surveyParticipants = !isEmptyObject(survey.participants) ? cloneDeep(survey.participants) : [];
+        let questionnaireParticipants = !isEmptyObject(questionnaire.participants)
             ? cloneDeep(questionnaire.participants)
             : [];
 
@@ -120,51 +113,85 @@ class NewQ13Participant extends Component<ReduxProps, State> {
             return questionnaireParticipants.indexOf(elem) < 0;
         });
 
-        let promises = surveyParticipants.map((participantId: any) => {
-            return new Promise((resolve) => {
-                getParticipant(participantId)
-                    .then(function (doc: any) {
-                        let tempDoc = doc.data;
-                        tempDoc.id = doc.id;
-                        getUser(participantId)
-                            .then((snapshot: any) => {
-                                if (snapshot.length > 0) {
-                                    snapshot.forEach(function (snap: any) {
-                                        tempDoc.active = snap.data.active;
+        if (!questionnaire.public) {
+            let promises = surveyParticipants.map((participantId: any) => {
+                return new Promise<void>((resolve) => {
+                    getParticipant(participantId)
+                        .then(function (doc: any) {
+                            let userId = doc.data.userId;
+                            let tempDoc: any = { participantId: participantId };
+                            if (userId) {
+                                getUserInfo(userId)
+                                    .then((userDoc: any) => {
+                                        tempDoc.active = userDoc.data.active;
                                         tempDoc.created = true;
-                                        tempDoc.userId = snap.id;
-                                        tempDoc.dateCreated =
-                                            snap.data.dateCreated;
+                                        tempDoc.userId = userDoc.id;
+                                        tempDoc.dateCreated = userDoc.data.dateCreated;
+                                        tempDoc.name = `${userDoc.data.firstName} ${userDoc.data.lastName}`;
+                                        tempDoc.email = userDoc.data.userName;
                                         participantList.push(tempDoc);
                                         resolve();
+                                    })
+                                    .catch((err: any) => {
+                                        console.error(err);
+                                        resolve();
                                     });
-                                } else {
-                                    tempDoc.created = false;
-                                    participantList.push(tempDoc);
-                                    resolve();
-                                }
-                            })
-                            .catch(() => {
+                            } else {
+                                participantList.push(tempDoc);
                                 resolve();
-                            });
-                    })
-                    .catch((err: any) => {
-                        console.error(err);
-                    });
-            });
-        });
-
-        Promise.all(promises)
-            .then((res) => {
-                parent.setState({
-                    participantList: participantList
+                            }
+                        })
+                        .catch((err: any) => {
+                            console.error(err);
+                        });
                 });
-                this.props.toggleLoadingDispatch(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                this.props.toggleLoadingDispatch(false);
             });
+
+            Promise.all(promises)
+                .then((res) => {
+                    parent.setState({
+                        participantList: participantList
+                    });
+                    this.props.toggleLoadingDispatch(false);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    this.props.toggleLoadingDispatch(false);
+                });
+        } else {
+            let promises = surveyParticipants.map((userId: any) => {
+                return new Promise<void>((resolve) => {
+                    let tempDoc: any = { participantId: userId };
+                    getUserInfo(userId)
+                        .then((doc: any) => {
+                            tempDoc.active = doc.data.active;
+                            tempDoc.email = doc.data.userName;
+                            tempDoc.name = `${doc.data.firstName} ${doc.data.lastName}`;
+                            tempDoc.created = true;
+                            tempDoc.userId = doc.id;
+                            tempDoc.dateCreated = doc.data.dateCreated;
+                            participantList.push(tempDoc);
+                            resolve();
+                        })
+                        .catch((err: any) => {
+                            console.error(err);
+                            resolve();
+                        });
+                });
+            });
+
+            Promise.all(promises)
+                .then((res) => {
+                    parent.setState({
+                        participantList: participantList
+                    });
+                    this.props.toggleLoadingDispatch(false);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    this.props.toggleLoadingDispatch(false);
+                });
+        }
     }
 
     componentDidMount() {
@@ -172,102 +199,97 @@ class NewQ13Participant extends Component<ReduxProps, State> {
     }
 
     render = () => {
-        let {allChecked, checkedList, participantList} = this.state;
+        let { allChecked, checkedList, participantList } = this.state;
 
         return (
             <IonPage>
                 <IonHeader>
                     <IonToolbar>
-                        <IonButtons slot="start">
+                        <IonButtons slot='start'>
                             <IonBackButton defaultHref={routes.HOME} />
                         </IonButtons>
-                        <IonTitle style={{verticalAlign: 'middle'}}>
+                        <IonTitle style={{ verticalAlign: 'middle' }}>
                             Add Respondents From Survey
-                            <div style={{float: 'right', maxHeight: '20px'}}>
+                            <div style={{ float: 'right', maxHeight: '20px' }}>
                                 {this.state.success && (
-                                    <IonText
-                                        color="success"
-                                        style={{fontSize: '14px'}}>
+                                    <IonText color='success' style={{ fontSize: '14px' }}>
                                         Successfully saved &nbsp;&nbsp;&nbsp;
                                     </IonText>
                                 )}
-                                <IonButton
-                                    style={{
-                                        height: '20px',
-                                        verticalAlign: 'middle'
-                                    }}
-                                    onClick={() => this.add()}>
-                                    Add Respondent(s)
-                                </IonButton>
                             </div>
                         </IonTitle>
+                        <IonButtons slot='end'>
+                            <IonButton
+                                style={{ margin: '16px' }}
+                                fill='solid'
+                                color='primary'
+                                onClick={() => this.add()}>
+                                Add Respondent(s)
+                            </IonButton>
+                        </IonButtons>
                     </IonToolbar>
                 </IonHeader>
                 <IonContent>
                     <IonList>
-                        <IonItem color="light">
-                            <IonCol size="1">
-                                <IonCheckbox
-                                    checked={allChecked}
-                                    onClick={(e: any) => this.checkAll()}
-                                />
+                        <IonItem color='light' key='header'>
+                            <IonCol size='.5'>
+                                <IonCheckbox checked={allChecked} onClick={(e: any) => this.checkAll()} />
                             </IonCol>
-                            <IonCol size="4">
+                            <IonCol size='2.5'>
                                 <IonLabel>Respondent</IonLabel>
                             </IonCol>
-                            <IonCol size="3">
+                            <IonCol size='2'>
+                                <IonLabel>Name</IonLabel>
+                            </IonCol>
+                            <IonCol size='3'>
+                                <IonLabel>Email</IonLabel>
+                            </IonCol>
+                            <IonCol size='1.5'>
                                 <IonLabel>Account Created</IonLabel>
                             </IonCol>
-                            <IonCol size="3">
+                            <IonCol size='1.5'>
                                 <IonLabel>Date Registered</IonLabel>
                             </IonCol>
-                            <IonCol size="1">
+                            <IonCol size='1'>
                                 <IonLabel>Enabled</IonLabel>
                             </IonCol>
                         </IonItem>
                         {participantList.map((participant: any) => {
-                            let {
-                                id,
-                                participantId,
-                                active,
-                                created,
-                                dateCreated
-                            } = participant;
+                            let { participantId, active, created, dateCreated, email, name } = participant;
                             return (
-                                <IonItem key={id}>
-                                    <IonCol size="1">
+                                <IonItem key={participantId}>
+                                    <IonCol size='.5'>
                                         <IonCheckbox
                                             value={participantId}
-                                            checked={
-                                                checkedList.indexOf(
-                                                    participantId
-                                                ) > -1
-                                            }
-                                            onClick={(e: any) =>
-                                                this.handleChange(e)
-                                            }
+                                            checked={checkedList.indexOf(participantId) > -1}
+                                            onClick={(e: any) => this.handleChange(e)}
                                         />
                                     </IonCol>
-                                    <IonCol size="4">
+                                    <IonCol size='2.5'>
                                         <IonLabel>{participantId}</IonLabel>
                                     </IonCol>
-                                    <IonCol size="3">
-                                        <IonLabel>
-                                            {created ? 'Yes' : 'No'}
-                                        </IonLabel>
+                                    <IonCol size='2'>
+                                        <IonLabel>{name}</IonLabel>
                                     </IonCol>
-                                    <IonCol size="3">
+                                    <IonCol size='3'>
+                                        <IonLabel>{email}</IonLabel>
+                                    </IonCol>
+                                    <IonCol size='1.5'>
+                                        <IonLabel>{created ? 'Yes' : 'No'}</IonLabel>
+                                    </IonCol>
+                                    <IonCol size='1.5'>
                                         <IonLabel>
                                             {!isEmptyObject(dateCreated)
-                                                ? dateCreated
+                                                ? new Date(dateCreated).toLocaleDateString()
                                                 : ''}
                                         </IonLabel>
                                     </IonCol>
-                                    <IonCol size="1">
+                                    <IonCol size='1'>
                                         <IonItem>
                                             <IonCheckbox
                                                 id={`${participantId}-cb`}
-                                                color="primary"
+                                                title='enabled'
+                                                color='primary'
                                                 checked={active}
                                                 disabled={true}
                                             />
@@ -294,10 +316,7 @@ function mapStateToProps(state: any) {
 
 function mapDispatchToProps(dispatch: any) {
     return {
-        updateQuestionnaireDispatch(
-            questionnaireId: string,
-            questionnaire: any
-        ) {
+        updateQuestionnaireDispatch(questionnaireId: string, questionnaire: any) {
             dispatch(updateQuestionnaire(questionnaireId, questionnaire));
         },
         toggleLoadingDispatch(loading: boolean) {
@@ -306,7 +325,4 @@ function mapDispatchToProps(dispatch: any) {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withRouter(NewQ13Participant));
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(NewQ13Participant));

@@ -8,14 +8,15 @@ import {
     IonTextarea,
     IonLabel,
     IonText,
-    IonItem
+    IonItem,
+    IonButton
 } from '@ionic/react';
 import React from 'react';
-import {isEmptyObject} from '../../utils/Utils';
-import {addCircleOutline} from 'ionicons/icons';
+import { isEmptyObject } from '../../utils/Utils';
+import { addCircleOutline } from 'ionicons/icons';
 import InfoCardSection from './InfoCardSection';
 import InfoSectionSelector from './InfoSectionSelector';
-import {ItemReorderEventDetail} from '@ionic/core';
+import { ItemReorderEventDetail } from '@ionic/core';
 const arrayMove = require('array-move');
 
 interface InfoCardPaletteState {
@@ -33,10 +34,7 @@ interface PassedProps {
     storeSections: Function;
 }
 
-class InfoCardPalette extends React.Component<
-    PassedProps,
-    InfoCardPaletteState
-> {
+class InfoCardPalette extends React.Component<PassedProps, InfoCardPaletteState> {
     constructor(props: PassedProps) {
         super(props);
         this.state = {
@@ -45,11 +43,11 @@ class InfoCardPalette extends React.Component<
     }
 
     toggleSectionSelector = (bool: boolean) => {
-        this.setState({showSectionSelector: bool});
+        this.setState({ showSectionSelector: bool });
     };
 
     render() {
-        let {showSectionSelector} = this.state;
+        let { showSectionSelector } = this.state;
         let {
             sections,
             variable,
@@ -70,43 +68,40 @@ class InfoCardPalette extends React.Component<
 
         return (
             <>
-                <IonCard
-                    style={{height: '650px', maxWidth: '500px'}}
-                    disabled={!editing}>
+                <IonCard style={{ height: '650px', maxWidth: '500px' }} disabled={!editing}>
                     <IonCardHeader>
                         <IonCardTitle>
-                            Palette&nbsp;
-                            <IonIcon
-                                icon={addCircleOutline}
-                                onClick={() => this.toggleSectionSelector(true)}
-                                style={{cursor: 'pointer'}}
-                            />
+                            <IonLabel>Palette </IonLabel>
+                            <IonButton
+                                fill='clear'
+                                color='dark'
+                                title='Palette'
+                                onClick={() => this.toggleSectionSelector(true)}>
+                                <IonIcon
+                                    icon={addCircleOutline}
+                                    title='Palette'
+                                    style={{ cursor: 'pointer', fontSize: '20px', paddingBottom: '.75em' }}
+                                />
+                            </IonButton>
                         </IonCardTitle>
                     </IonCardHeader>
-                    <IonCardContent
-                        style={{maxHeight: '90%', overflow: 'scroll'}}>
+                    <IonCardContent style={{ maxHeight: '90%', overflow: 'scroll' }}>
                         <IonItem>
-                            <IonLabel position="stacked">
-                                Variable<IonText color="danger">*</IonText>
+                            <IonLabel position='stacked'>
+                                Variable<IonText color='danger'>*</IonText>
                             </IonLabel>
                             <IonTextarea
-                                placeholder="A unique ID"
-                                id="question-variable"
-                                name="variable"
+                                placeholder='A unique ID'
+                                id='question-variable'
+                                name='variable'
                                 value={variable}
                                 rows={1}
-                                onIonChange={(e: any) =>
-                                    handleVariableChange(e)
-                                }></IonTextarea>
+                                onIonChange={(e: any) => handleVariableChange(e)}></IonTextarea>
                         </IonItem>
                         <br />
-                        {isEmptyObject(sections) && (
-                            <span>No Sections Added *Required</span>
-                        )}
+                        {isEmptyObject(sections) && <span>No Sections Added *Required</span>}
                         {!isEmptyObject(sections) ? (
-                            <IonReorderGroup
-                                disabled={false}
-                                onIonItemReorder={doReorder}>
+                            <IonReorderGroup disabled={false} onIonItemReorder={doReorder}>
                                 {sections.map((section: any, index: any) => {
                                     return (
                                         <InfoCardSection

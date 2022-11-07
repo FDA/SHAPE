@@ -42,8 +42,13 @@ export const routes = {
   REGISTER: "/register",
   PASSWORD_RESET: "/password-reset",
   SECURITY_QUESTIONS: "/security-questions",
+  TAB_SECURITY_QUESTIONS: "/tabs/tab1/security-questions",
   PARTICIPANT_ADD: "/participant-add",
   PARTICIPANT_QUERY: "/participant-query",
+  TAB_PARTICIPANT_QUERY: "/tabs/tab1/participant-query",
+  ORG_QUERY: "/org-query",
+  TAB_ORG_QUERY: "/tabs/tab1/org-query",
+  TAB_PUBLIC_ORG_QUERY: "/tabs/tab1/public-org-query",
   NEW_DIARY_ENTRY: "/tabs/diary/newEntry",
   DIARY: "/tabs/diary",
   START_EHR_LINK: "/tabs/tab2/startEHRLink",
@@ -56,11 +61,15 @@ export const routes = {
   STORE_EHR: "/store-ehr",
   DO_QUESTIONNAIRE: "/tabs/do-questionnaire",
   TERMS_AND_CONDITIONS: "/tc",
+  TAB_TERMS_AND_CONDITIONS: "/tabs/tab1/tc",
   SURVEY: "/tabs/survey",
   PREVIEW_QUESTIONNAIRE: "/preview-questionnaire",
   PREVIEW_SURVEY: "/preview-survey",
   ON_EHR_COMPLETE: "/on-ehr-complete",
   ACTION: "/action",
+  PUBLIC_PRIVATE_QUERY: "/public-private-query",
+  TAB_PUBLIC_PRIVATE_QUERY: "/tabs/tab1/public-private-query",
+  ADD_PARTICIPANTS_QUERY: "/add-participants-query"
 };
 
 // FIREBASE COLLECTIONS

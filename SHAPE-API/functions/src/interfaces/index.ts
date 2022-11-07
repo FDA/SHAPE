@@ -10,3 +10,4 @@ export * from './Question';
 export * from './Questionnaire';
 export * from './Survey';
 export * from './User';
+export * from './History';

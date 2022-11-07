@@ -9,4 +9,5 @@ export interface Participant {
     participantId: string,
     id?: string,
     org: string,
+    optedOut?: boolean,
 }

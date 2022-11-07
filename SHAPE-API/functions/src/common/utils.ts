@@ -1,5 +1,6 @@
 import { Response } from "express";
 
+// eslint-disable-next-line no-shadow
 export enum response_status_codes {
   success = 200,
   bad_request = 400,

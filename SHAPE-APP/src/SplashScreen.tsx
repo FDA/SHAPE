@@ -39,13 +39,8 @@ class SplashScreen extends Component<PassedProps, SplashScreenState> {
       this.props.setReadyState(true);
     } else if (firebaseLoggedIn && !emailVerified && !applicationReady) {
       this.props.setReadyState(true);
-    } else if (firebaseLoggedIn && profile.participantId && !surveysFetched) {
-      this.props.refreshAll(
-        profile.org,
-        profile.participantId,
-        fireBaseAuth.uid,
-        profile.pushEnabled
-      );
+    } else if (firebaseLoggedIn && profile.active && !surveysFetched) {
+      this.props.refreshAll();
       this.setState({ surveysFetched: true });
     } else if (!firebaseLoggedIn) {
       this.setState({ surveysFetched: false });

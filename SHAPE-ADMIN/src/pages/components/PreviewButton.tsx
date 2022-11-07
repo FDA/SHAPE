@@ -3,7 +3,7 @@ import {IonButton} from '@ionic/react';
 import {connect} from 'react-redux';
 import {isEmptyObject} from '../../utils/Utils';
 import {getEnvVar} from '../../utils/API';
-import firebase from '../../config/fb';
+import { getAuth } from 'firebase/auth';
 import {Questionnaire} from '../../interfaces/DataTypes';
 
 interface StateProps {
@@ -31,7 +31,7 @@ class PreviewButton extends React.Component<ReduxProps, StateProps> {
     }
 
     componentDidMount() {
-        const currentUser = firebase.auth().currentUser;
+        const currentUser = getAuth().currentUser;
         if (currentUser != null) {
             currentUser.getIdToken(true).then((token: any) => {
                 this.setState({token: token});

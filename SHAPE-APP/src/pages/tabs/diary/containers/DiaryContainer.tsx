@@ -11,7 +11,7 @@ interface DiaryProps {
 
 class DiaryContainer extends Component<DiaryProps, {}> {
   render() {
-    let { setDisplay, userDiaryEntries, fireBaseAuth } = this.props;
+    const { setDisplay, userDiaryEntries, fireBaseAuth } = this.props;
     return (
       <Diary
         setDisplay={setDisplay}
@@ -27,6 +27,6 @@ const mapStateToProps = (state: any) => ({
   userDiaryEntries: state.userDiaryEntries,
 });
 
-const mapDispatchToProps = (dispatch: any) => ({});
+const mapDispatchToProps = (/* dispatch: any */) => ({});
 
 export default connect(mapStateToProps, mapDispatchToProps)(DiaryContainer);

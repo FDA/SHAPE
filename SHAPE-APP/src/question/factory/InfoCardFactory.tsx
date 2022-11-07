@@ -6,11 +6,7 @@ import { questionTypes } from "../../utils/Constants";
 
 export default class InfoCardFactory extends BaseQuestionFactory {
   createJSX(
-    question: QuestionnaireQuestion,
-    valueEventHandler: Function,
-    defaultValue: string,
-    clearValue: Function,
-    currentAnswerValue: Function
+    question: QuestionnaireQuestion
   ): ReactNode {
     return question.type === questionTypes.INFO ? (
       <InfoCardContainer question={question} />

@@ -13,9 +13,9 @@ interface Props {
     displayChoices: any;
     placeholder: string;
     format: string;
-    min: number;
-    max: number;
-    step: number;
+    min: string;
+    max: string;
+    step: string;
     pin: boolean;
     ticks: boolean;
     sliderValue: number;

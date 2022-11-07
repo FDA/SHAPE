@@ -4,7 +4,7 @@ import { App } from '@capacitor/app';
 import { environments } from "./utils/Constants";
 
 const AppUrlListener: React.FC<any> = () => {
-  let history = useHistory();
+  const history = useHistory();
   useEffect(() => {
     App.addListener("appUrlOpen", (data: any) => {
       // slug = /tabs/tab2

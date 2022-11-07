@@ -1,13 +1,15 @@
-import {InformedConsent} from "../interfaces";
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
+import {InformedConsent} from "../interfaces";
 
-admin.initializeApp(functions.config().firebase, 'informed-consent');
+
+initializeApp(functions.config().firebase, 'informed-consent');
 
 export class InformedConsentService {
 
-    db = admin.firestore();
+    db = getFirestore();
     collection = "informed-consent";
 
     private processInformedConsent(dataQuerySnapshot:any, callback: CallbackFunction) {

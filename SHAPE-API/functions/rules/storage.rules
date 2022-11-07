@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+  	match /{org} {
+        //allow read, write: if request.auth != null && request.auth.token.org == org;
+        
+        match /ehr/{surveyId}/{participantId}/{allProfiles=**} {
+          //allow write: if (request.auth.token.participantId == participantId && request.auth.token.org == org) || request.auth.uid == participantId;
+          allow write: if signedIn();
+          allow read: if isAdmin() && (request.auth.token.org == org || org == "PUBLIC");
+        }
+
+        match /image/{imageId} {
+          allow read: if signedIn();
+          allow write: if isAdmin() && request.auth.token.org == org;
+        }
+    }
+    
+    //match /{allPaths=**} {
+    //  allow read, write: if request.auth != null;
+    //}
+  }
+}
+
+function isAdmin(){
+	return request.auth != null && request.auth.token.admin == true
+}
+
+function signedIn() {
+	return request.auth.uid != null;
+}

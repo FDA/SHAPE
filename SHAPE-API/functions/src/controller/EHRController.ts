@@ -45,11 +45,11 @@ export class EHRController {
     public get(req: Request, res: Response) {
         // @ts-ignore
         const org = req.org;
-        if (req.params.respondentId && req.params.participantName && req.params.dob) {
+        if (req.params.surveyId && req.params.respondentId && req.params.profileId) {
             const params = {
+                surveyId: req.params.surveyId,
                 respondentId: req.params.respondentId,
-                participantName: req.params.participantName,
-                dob: req.params.dob
+                profileId: req.params.profileId,
             };
             this.ehrService.get(org, params, (error: boolean, data: any) => {
                 if (error) {

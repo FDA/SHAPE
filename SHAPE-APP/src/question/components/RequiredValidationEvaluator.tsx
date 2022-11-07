@@ -1,13 +1,11 @@
 import { ValidationEvaluator } from "./ValidationEvaluator";
-import { Context } from "../engine/Context";
 import { QuestionnaireQuestion } from "../../interfaces/DataTypes";
 import { questionTypes } from "../../utils/Constants";
 
 export class RequiredValidationEvaluator implements ValidationEvaluator {
   evaluate(
     question: QuestionnaireQuestion,
-    currentValue: string,
-    context: Context | undefined
+    currentValue: string
   ): boolean | undefined {
     let retVal = undefined;
 

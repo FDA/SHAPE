@@ -7,6 +7,8 @@ export const messageFactory = (org: string, req: Request):Message => {
          req.body.emailRecipients !== undefined ? req.body.emailRecipients : [],
       pushRecipients:
          req.body.pushRecipients !== undefined ? req.body.pushRecipients : [],
+      inAppRecipients:
+         req.body.inAppRecipients !== undefined ? req.body.inAppRecipients : [],
       smsRecipients:
          req.body.smsRecipients !== undefined ? req.body.smsRecipients : [],
       message: req.body.message,

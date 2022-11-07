@@ -1,14 +1,15 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
-const Readable = require('stream').Readable
+import { Readable } from "stream";
 
-
-admin.initializeApp(functions.config().firebase, 'image');
+initializeApp(functions.config().firebase, 'image');
 
 export class ImageService {
-    bucket = admin.storage().bucket();
-    db = admin.firestore();
+    bucket = getStorage().bucket();
+    db = getFirestore();
     collection = "image";
 
     private processImage(imageQuerySnapshot:any, callback: CallbackFunction) {
@@ -42,7 +43,7 @@ export class ImageService {
         .on('error', (error: any) => {
             callback(true, error);
         })
-        .on('finish', (f: any) => {
+        .on('finish', () => {
             this.db.collection(this.collection).doc(image.id).set({
                 fileName: image.fileName,
                 org: image.org,

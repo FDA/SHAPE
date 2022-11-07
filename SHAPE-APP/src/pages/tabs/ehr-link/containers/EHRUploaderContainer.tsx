@@ -5,9 +5,9 @@ import { setEHRReceipts } from "../../../../redux/actions/Participant";
 import { isLoading } from "../../../../redux/actions/Authentication";
 import {
   User,
-  EHRReceipt,
   Person,
   EHR,
+  Survey
 } from "../../../../interfaces/DataTypes";
 import EHRUploader from "../EHRUploader";
 
@@ -22,10 +22,11 @@ interface PassedProps {
   loading: boolean;
   data: any;
   resetEHRDispatch: Function;
+  surveys: Array<Survey>;
 }
 
 const EHRUploaderBase = (props: PassedProps) => {
-  let {
+  const {
     profile,
     uid,
     selectedEHR,
@@ -36,6 +37,7 @@ const EHRUploaderBase = (props: PassedProps) => {
     loading,
     data,
     resetEHRDispatch,
+    surveys
   } = props;
   return (
     <EHRUploader
@@ -49,12 +51,14 @@ const EHRUploaderBase = (props: PassedProps) => {
       loading={loading}
       data={data}
       resetEHR={resetEHRDispatch}
+      surveys={surveys}
     />
   );
 };
 
 const mapStateToProps = (state: any) => ({
   loading: state.loading,
+  surveys: state.surveys,
 });
 
 function mapDispatchToProps(dispatch: any) {
@@ -63,8 +67,8 @@ function mapDispatchToProps(dispatch: any) {
       dispatch(isLoading(loading));
     },
     resetEHRDispatch: () => dispatch(resetEHR()),
-    setEHRDispatch(receipts: Array<EHRReceipt>) {
-      dispatch(setEHRReceipts(receipts));
+    setEHRDispatch() {
+      dispatch(setEHRReceipts());
     },
   };
 }

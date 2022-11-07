@@ -7,12 +7,11 @@ export class EHRRoutes {
    private ehrController: EHRController = new EHRController();
 
    public createRoutes(app: Application) {
-      // can accept a participant ID to search by ex. ?participantId=1234
       router.get("/ehr/", (req: Request, res: Response) => {
          this.ehrController.getAll(req, res);
       });
 
-      router.get("/ehr/:respondentId/:participantName/:dob", (req: Request, res: Response) => {
+      router.get("/ehr/:surveyId/:respondentId/:profileId", (req: Request, res: Response) => {
          this.ehrController.get(req, res);
       });
 

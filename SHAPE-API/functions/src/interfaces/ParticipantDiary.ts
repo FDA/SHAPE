@@ -31,4 +31,6 @@ export interface ParticipantDiary {
     withdrawalReason?: string,
     org: string,
     dateWritten: string,
+    userId: string,
+    profileId: string,
 }

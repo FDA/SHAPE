@@ -6,19 +6,22 @@ export class Context {
   private _questionnaire: string;
   private _profile: Profile;
   private _id: string;
+  private _org: string;
 
   constructor(
     survey: string,
     participant: string,
     questionnaire: string,
     profile: Profile,
-    id: string
+    id: string,
+    org: string,
   ) {
     this._survey = survey;
     this._participant = participant;
     this._questionnaire = questionnaire;
     this._profile = profile;
     this._id = id;
+    this._org = org;
   }
 
   get survey(): string {
@@ -59,5 +62,13 @@ export class Context {
 
   set id(value: string) {
     this._id = value;
+  }
+
+  get org(): string {
+    return this._org;
+  }
+
+  set org(value: string) {
+    this._org = value;
   }
 }

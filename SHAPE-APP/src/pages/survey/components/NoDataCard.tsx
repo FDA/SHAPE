@@ -1,31 +1,30 @@
-import React from "react";
-import { IonRow, IonCol, IonLabel, IonText } from "@ionic/react";
-import { images } from "../../../utils/Constants";
+import React from 'react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonText } from '@ionic/react';
 
-export const NoDataCard: React.FC<any> = () => (
-  <span style={{ textAlign: "center" }}>
-    <IonRow>
-      <IonCol>
-        <IonText style={{ fontFamily: "OpenSans", textTransform: "uppercase" }}>
-          <h1>Welcome to SHAPE</h1>
-        </IonText>
-        <img src={images.SHAPE_LOGO_IMAGE} alt="shape-logo" />
-      </IonCol>
-    </IonRow>
-    <IonRow>
-      <IonLabel>
-        <h1>Survey of Health and Patient Experience</h1>
-      </IonLabel>
-    </IonRow>
-    <IonRow>
-      <IonCol style={{ textAlign: "center" }}>
-        <img src={images.WAITING_ROOM} alt="waitingroom" />
-        <h3>
-          It looks like you haven't been enrolled in any surveys or
-          questionnaires yet, please check back soon or contact your system
-          administrator.
-        </h3>
-      </IonCol>
-    </IonRow>
-  </span>
-);
+export const NoDataCard: React.FC<any> = ({ questionnaireView }) => {
+    return (
+        <IonCard style={{ textAlign: 'center' }}>
+            <IonCardHeader>
+                <IonCardTitle justify-content-center align-items-center>
+                    {questionnaireView === 'todo' && <IonText>No Questionnaires</IonText>}
+                    {questionnaireView === 'complete' && <IonText>No Questionnaires Completed</IonText>}
+                </IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+                {questionnaireView === 'todo' && (
+                    <IonText>
+                        There are currently no questionnaires for you to complete.<br></br>
+                        <br></br>
+                    </IonText>
+                )}
+                {questionnaireView === 'complete' && (
+                    <IonText>
+                        Once you respond to a questionnaire it will appear here.<br></br>
+                        <br></br>
+                    </IonText>
+                )}
+                Pull down on this card to refresh.
+            </IonCardContent>
+        </IonCard>
+    );
+};

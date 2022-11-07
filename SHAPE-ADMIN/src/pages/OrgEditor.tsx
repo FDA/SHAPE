@@ -15,11 +15,11 @@ import {
 } from '@ionic/react';
 import NewOrg from './NewOrg';
 import {isEmptyObject} from '../utils/Utils';
-import {Organization, User} from '../interfaces/DataTypes';
+import {Organization, AdminUser} from '../interfaces/DataTypes';
 import {routes} from '../utils/Constants';
 
 interface Props extends RouteComponentProps {
-    profile: User;
+    profile: AdminUser;
 }
 
 interface State {

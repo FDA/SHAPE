@@ -4,7 +4,7 @@ import {
   submitDiary,
   getDiaryEntries,
 } from "../../../../../redux/actions/Diary";
-import { Participant } from "../../../../../interfaces/DataTypes";
+import { User, Survey, Person } from "../../../../../interfaces/DataTypes";
 import "../../Diary.css";
 import Withdrawal from "../Withdrawal";
 
@@ -12,10 +12,10 @@ interface EventFormProps {
   setView: Function;
   submitDiaryDispatch: Function;
   getDiaryEntriesDispatch: Function;
-  profile: Participant;
-  surveyId: string;
-  profileName: string;
-  profileDOB: string;
+  profile: User;
+  survey: Survey | null;
+  participant: Person;
+  userId: string;
 }
 
 interface EventFormState {
@@ -27,14 +27,14 @@ interface EventFormState {
 
 class WithdrawalContainer extends Component<EventFormProps, EventFormState> {
   render() {
-    let {
+    const {
       setView,
       submitDiaryDispatch,
       getDiaryEntriesDispatch,
       profile,
-      surveyId,
-      profileName,
-      profileDOB,
+      survey,
+      participant,
+      userId,
     } = this.props;
     return (
       <Withdrawal
@@ -42,9 +42,9 @@ class WithdrawalContainer extends Component<EventFormProps, EventFormState> {
         submitDiary={submitDiaryDispatch}
         getDiaryEntries={getDiaryEntriesDispatch}
         profile={profile}
-        surveyId={surveyId}
-        profileName={profileName}
-        profileDOB={profileDOB}
+        survey={survey}
+        participant={participant}
+        userId={userId}
       />
     );
   }
@@ -52,14 +52,15 @@ class WithdrawalContainer extends Component<EventFormProps, EventFormState> {
 
 const mapStateToProps = (state: any) => ({
   profile: state.firebase.profile,
+  userId: state.firebase.auth.uid,
 });
 
 const mapDispatchToProps = (dispatch: any) => ({
   submitDiaryDispatch(diary: any) {
     dispatch(submitDiary(diary));
   },
-  getDiaryEntriesDispatch(participantId: string, org: string) {
-    dispatch(getDiaryEntries(participantId, org));
+  getDiaryEntriesDispatch() {
+    dispatch(getDiaryEntries());
   },
 });
 

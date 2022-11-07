@@ -16,7 +16,7 @@ interface PassedProps {
 }
 
 export const CustomDropdown = (props: PassedProps) => {
-  let { name, label, value, handleInputChange, optionsArr } = props;
+  const { name, label, value, handleInputChange, optionsArr } = props;
   return (
     <IonItem lines="none">
       <IonLabel position="stacked" class="ion-text-wrap">

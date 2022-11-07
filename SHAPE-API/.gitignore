@@ -7,6 +7,12 @@ yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
 
+# Compiled JavaScript files
+lib/
+
+# TypeScript v1 declaration files
+typings/
+
 # Firebase cache
 .firebase/
 

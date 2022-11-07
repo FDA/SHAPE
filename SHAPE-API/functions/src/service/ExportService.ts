@@ -1,13 +1,15 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
-import {responsesToFhir} from '../factory/fhir/fhirQuestionnaireMapping';
-import {diaryToFhir} from '../factory/fhir/fhirDiaryMapping';
+import {responsesToFhir} from "../factory/fhir/fhirQuestionnaireMapping";
+import {diaryToFhir} from "../factory/fhir/fhirDiaryMapping";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
+import { History } from "../interfaces";
 
-admin.initializeApp(functions.config().firebase, 'export');
+initializeApp(functions.config().firebase, 'export');
 
 export class ExportService {
-    db = admin.firestore();
+    db = getFirestore();
 
     firestoreCollection(collectionName: string): FirebaseFirestore.Query<FirebaseFirestore.DocumentData> {
         return this.db.collection(collectionName);
@@ -26,14 +28,16 @@ export class ExportService {
             const responses: ResponseData[] = [];
             responseSnapshot.forEach((doc: { id: string; data: () => any }) => {
                 const data = doc.data();
-                data.id = doc.id;
-                if(data.dateWritten._seconds) {
-                    data.dateWritten = new Date(
-                        data.dateWritten._seconds * 1000 +
-                            data.dateWritten._nanoseconds / 1000000
-                    );
+                if(data.systemGeneratedType !== "notApplicable") {
+                    data.id = doc.id;
+                    if(data.dateWritten._seconds) {
+                        data.dateWritten = new Date(
+                            data.dateWritten._seconds * 1000 +
+                                data.dateWritten._nanoseconds / 1000000
+                        );
+                    }
+                    responses.push(data);
                 }
-                responses.push(data);
             });
             return(responses);
         }).catch((error) => {
@@ -113,7 +117,25 @@ export class ExportService {
                             surveyName: survey.name,
                             diaries: res
                         };
-                        callback(false, formattedResponse);
+
+                        const log:History = {
+                            actionType: "diaryExported",
+                            org: org,
+                            participantId: "",
+                            questionnaireId: "",
+                            surveyId: id,
+                            timestamp: new Date(),
+                            userId: ""
+                        }
+                
+                        this.db.collection("history")
+                            .add(log)
+                            .then(() => {
+                                callback(false, formattedResponse);
+                            })
+                            .catch((err) => {
+                                callback(true, err);
+                            })
                     })
                     .catch((error) => {
                         callback(true, error);
@@ -146,7 +168,27 @@ export class ExportService {
                             },
                             questions: questionnaire.questions
                         };
-                        callback(false, formattedResponse);
+
+
+                        const log:History = {
+                            actionType: "questionnaireExported",
+                            org: org,
+                            participantId: "",
+                            questionnaireId: id,
+                            surveyId: id,
+                            timestamp: new Date(),
+                            userId: ""
+                        }
+                
+                        this.db.collection("history")
+                            .add(log)
+                            .then(() => {
+                                callback(false, formattedResponse);
+                            })
+                            .catch((err) => {
+                                callback(true, err);
+                            })
+
                     })
                     .catch((error) => {
                         callback(true, error);
@@ -169,7 +211,25 @@ export class ExportService {
                         const survey = data.data; 
                         survey.id = data.id;
                         const formattedResponse = diaryToFhir(responses, survey);
-                        callback(false, formattedResponse);
+
+                        const log:History = {
+                            actionType: "diaryExported",
+                            org: org,
+                            participantId: "",
+                            questionnaireId: "",
+                            surveyId: data.id,
+                            timestamp: new Date(),
+                            userId: ""
+                        }
+                
+                        this.db.collection("history")
+                            .add(log)
+                            .then(() => {
+                                callback(false, formattedResponse);
+                            })
+                            .catch((err) => {
+                                callback(true, err);
+                            })
                     })
                     .catch((error) => {
                         callback(true, error);
@@ -182,7 +242,6 @@ export class ExportService {
     }
 
     public exportQuestionnaireFhir(query: any, org: string, callback: CallbackFunction) {
-
         const questionnaireId = query.filter((item: any) => {
             return item.key === "questionnaireId"
         })[0].value;
@@ -193,20 +252,38 @@ export class ExportService {
                         const questionnaire = data.data; 
                         questionnaire.id = data.id;
                         this.getSurvey(org, questionnaire.surveyId)
-                        .then((d: any) => {
-                            const survey = d.data;
-                            survey.id = d.id;
-                            const formattedResponse = responsesToFhir(
-                                responses,
-                                questionnaire,
-                                survey
-                            );
-                            callback(false, formattedResponse);
-                        })
-                        .catch((error) => {
-                            console.error("caught in inner inner exportQuestionnaireFhir");
-                            callback(true, error);
-                        })
+                            .then((d: any) => {
+                                const survey = d.data;
+                                survey.id = d.id;
+                                const formattedResponse = responsesToFhir(
+                                    responses,
+                                    questionnaire,
+                                    survey
+                                );
+
+                                const log:History = {
+                                    actionType: "questionnaireExported",
+                                    org: org,
+                                    participantId: "",
+                                    questionnaireId: data.id,
+                                    surveyId: d.id,
+                                    timestamp: new Date(),
+                                    userId: ""
+                                }
+                        
+                                this.db.collection("history")
+                                    .add(log)
+                                    .then(() => {
+                                        callback(false, formattedResponse);
+                                    })
+                                    .catch((err) => {
+                                        callback(true, err);
+                                    })
+                            })
+                            .catch((error) => {
+                                console.error("caught in inner inner exportQuestionnaireFhir");
+                                callback(true, error);
+                            })
                     })
                     .catch((error) => {
                         console.error("caught in inner exportQuestionnaireFhir");

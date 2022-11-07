@@ -27,12 +27,12 @@ class WindowPortal extends React.Component<PassedProps, WindowPortalState> {
   componentDidMount() {
     // STEP 1: Create a new window, a div, and append it to the window. The div
     // *MUST** be created by the window it is to be appended to (Edge only)
-    let externalWindow = window.open(
+    const externalWindow = window.open(
       "",
       "",
       "resizeable=0,width=400,height=828,left=200,top=200"
     );
-    let containerEl = document.createElement("div");
+    const containerEl = document.createElement("div");
     if (externalWindow) {
       externalWindow.addEventListener("resize", this.handleResize);
       externalWindow.document.title = "Shape Window Portal";

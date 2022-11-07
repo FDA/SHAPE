@@ -1,13 +1,14 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
 import {Question} from "../interfaces";
 
 
-admin.initializeApp(functions.config().firebase, 'question');
+initializeApp(functions.config().firebase, 'question');
 
 export class QuestionService {
-    db = admin.firestore();
+    db = getFirestore();
     collection = "question";
 
     private processQuestion(questionQuerySnapshot: any, callback: CallbackFunction) {
@@ -66,7 +67,7 @@ export class QuestionService {
                 if (!question.exists) {
                     callback(true, {id: query.questionId, data: "Not Found", returned: question});
                 } else {
-                    let q = question.data();
+                    const q = question.data();
                     if(q!.org === org) {
                         callback(false, {id: question.id, data: question.data()})
                     } else {

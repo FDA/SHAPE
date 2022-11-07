@@ -1,4 +1,4 @@
-import { isEmptyObject } from "./utils";
+import { isEmptyObject, guid } from "./utils";
 
 // questionnaire
 export function FHIRQuestionnaire(formattedQuestions: any, q: any) {
@@ -15,6 +15,7 @@ export function FHIRQuestionnaire(formattedQuestions: any, q: any) {
    } = q;
 
    return {
+      fullUrl: `Questionnaire/${guid()}`,
       resource: {
          resourceType: "Questionnaire",
          meta: {
@@ -201,10 +202,10 @@ export function FHIRDateTime(q: any) {
             url: "http://ibm.com/fhir/fda/shape/StructureDefinition/extension-itemSASVariableName",
             valueString: variable.trim(), //"${variable}"
          },
-         /*{
-                url: 'http://hl7.org/fhir/StructureDefinition/regex',
-                valueString: format.trim() //"${regex}"
-            }*/
+         {
+            url: 'http://hl7.org/fhir/StructureDefinition/regex',
+            valueString: "^d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$" //"${regex}"
+         }
       ],
       type: "date",
       text: text, //"${text}",
@@ -532,7 +533,7 @@ export function FHIRInfo(q: any) {
                linkId: section.id,
             });
             break;
-         case "list":
+         case "list": {
             const listItem = {
                extension: [
                   {
@@ -554,6 +555,7 @@ export function FHIRInfo(q: any) {
             };
    
             for (const choice of section.choices) {
+                //@ts-ignore
                listItem.item.push({
                   extension: [
                      {
@@ -582,7 +584,8 @@ export function FHIRInfo(q: any) {
             }
             question.item.push(listItem);
             break;
-         case "table":
+         }
+         case "table": {
             const tableItem = {
                extension: [
                   {
@@ -613,7 +616,8 @@ export function FHIRInfo(q: any) {
                   return cell.row === i;
                });
                for (const cell of rowCells) {
-                  row.item.push({
+                  // @ts-ignore
+                  row.item.push({  
                      extension: [
                         {
                            //@ts-ignore
@@ -645,6 +649,7 @@ export function FHIRInfo(q: any) {
    
             question.item.push(tableItem);
             break;
+         }
          case "image":
             question.item.push({
                type: "attachment",

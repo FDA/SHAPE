@@ -1,8 +1,13 @@
 .ruleGrid {
-	padding: 0px;
-	color: '#f5f6f9';
+    padding: 0px;
+    color: "#f5f6f9";
 }
 
 .ruleCol {
-	padding: 0px;
+    padding: 0px;
+}
+
+.ruleSelect {
+    text-indent: 10px;
+    min-width: 70px;
 }

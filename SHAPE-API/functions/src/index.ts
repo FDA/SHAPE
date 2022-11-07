@@ -1,7 +1,7 @@
-//import libraries
 import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
-import * as express from "express";
+import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import express from "express";
 import {
    InboxRoutes,
    MessageRoutes,
@@ -20,11 +20,11 @@ import {
 } from "./routes";
 import { InformedConsentRoutes } from "./routes/InformedConsentRoutes";
 
-const cors = require("cors");
-const cookieParser = require("cookie-parser")();
+import cors from "cors";
+import cookieParser from "cookie-parser";
 
 //initialize firebase inorder to access its services
-admin.initializeApp(functions.config().firebase);
+initializeApp(functions.config().firebase);
 
 // middleware to check for firebase token in header or cookie
 // @ts-ignore
@@ -67,8 +67,7 @@ const validateFirebaseIdToken = async (req: any, res: any, next: any) => {
          return;
       }
 
-      // @ts-ignore
-      const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+      const decodedIdToken = await getAuth().verifyIdToken(idToken);
       // @ts-ignore
       const adminClaim = decodedIdToken.admin;
       const uid = decodedIdToken.uid;
@@ -105,7 +104,7 @@ const options = {
    //exposedHeaders: ['Authorization', 'Content-Type', 'Access-Control-Allow-Origin']
 };
 main.use(cors(options));
-main.use(cookieParser);
+main.use(cookieParser());
 
 // Create Informed Consent Routes
 const informedConsent = new InformedConsentRoutes();

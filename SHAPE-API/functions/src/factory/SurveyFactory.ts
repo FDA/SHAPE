@@ -11,7 +11,8 @@ export const surveyFactory = (org: string, req: Request): Survey => {
       open: req.body.open,
       shortDescription: req.body.shortDescription,
       participants: req.body.participants !== undefined ? req.body.participants : [],
-      locked: req.body.locked !== undefined ? req.body.locked : null,
-      org: org
+      locked: req.body.locked !== undefined ? req.body.locked : false,
+      org: org,
+      public: req.body.public !== undefined ? req.body.public : false
   };
 }

@@ -17,14 +17,14 @@ import {
     IonFabButton
 } from '@ionic/react';
 import React from 'react';
-import {isEmptyObject} from '../utils/Utils';
-import {dateFormats} from '../utils/Constants';
-import {withRouter, RouteComponentProps} from 'react-router-dom';
-import {getNotifications} from '../utils/API';
-import {compareDesc, format} from 'date-fns';
+import { isEmptyObject } from '../utils/Utils';
+import { dateFormats } from '../utils/Constants';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { getNotifications } from '../utils/API';
+import { compareDesc, format } from 'date-fns';
 import Loading from '../layout/Loading';
-import {arrowBackOutline} from 'ionicons/icons';
-import {Message} from '../interfaces/DataTypes';
+import { arrowBackOutline } from 'ionicons/icons';
+import { Message } from '../interfaces/DataTypes';
 
 interface StateProps {
     messages: Array<Message>;
@@ -33,10 +33,7 @@ interface StateProps {
     selectedMessage: Message;
 }
 
-class NotificationHistory extends React.Component<
-    RouteComponentProps,
-    StateProps
-> {
+class NotificationHistory extends React.Component<RouteComponentProps, StateProps> {
     constructor(props: RouteComponentProps) {
         super(props);
         this.state = {
@@ -48,7 +45,7 @@ class NotificationHistory extends React.Component<
     }
 
     UNSAFE_componentWillMount() {
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         let parent = this;
         let messages: Array<Message> = [];
         getNotifications()
@@ -57,7 +54,7 @@ class NotificationHistory extends React.Component<
                     let message = doc.data;
                     messages.push(message);
                 });
-                parent.setState({messages: messages, isLoading: false});
+                parent.setState({ messages: messages, isLoading: false });
             })
             .catch((err: any) => {
                 console.error(err);
@@ -65,7 +62,7 @@ class NotificationHistory extends React.Component<
     }
 
     render() {
-        let {messages, isLoading, showDetails, selectedMessage} = this.state;
+        let { messages, isLoading, showDetails, selectedMessage } = this.state;
 
         messages = messages.sort((a: Message, b: Message) =>
             compareDesc(new Date(a.timestamp), new Date(b.timestamp))
@@ -75,94 +72,69 @@ class NotificationHistory extends React.Component<
             <>
                 {!showDetails && (
                     <IonPage>
-                        <IonHeader>
+                        <IonHeader aria-label='Sent Notifications'>
                             <IonToolbar>
-                                <IonButtons slot="start">
-                                    <IonBackButton defaultHref="/home" />
+                                <IonButtons slot='start'>
+                                    <IonBackButton defaultHref='/home' aria-label='Home' />
                                 </IonButtons>
                                 <IonTitle>Sent Notifications</IonTitle>
                             </IonToolbar>
                         </IonHeader>
                         <IonContent>
                             <IonGrid>
-                                <IonItem color="light">
-                                    <IonCol size="2">Timestamp</IonCol>
-                                    <IonCol size="2">Subject</IonCol>
-                                    <IonCol size="5">Message</IonCol>
-                                    <IonCol size="1">Email</IonCol>
-                                    <IonCol size="1">SMS</IonCol>
-                                    <IonCol size="1">In-App</IonCol>
+                                <IonItem color='light'>
+                                    <IonCol size='2'>Timestamp</IonCol>
+                                    <IonCol size='2'>Subject</IonCol>
+                                    <IonCol size='5'>Message</IonCol>
+                                    <IonCol size='1'>Email</IonCol>
+                                    <IonCol size='1'>SMS</IonCol>
+                                    <IonCol size='1'>In-App</IonCol>
                                 </IonItem>
                                 {isLoading && (
                                     <IonRow text-center>
-                                        <IonCol
-                                            size="12"
-                                            style={{textAlign: 'center'}}>
+                                        <IonCol size='12' style={{ textAlign: 'center' }}>
                                             <Loading />
                                         </IonCol>
                                     </IonRow>
                                 )}
-                                {messages.map(
-                                    (message: Message, index: number) => {
-                                        return (
-                                            <IonItem
-                                                button
-                                                onClick={() =>
-                                                    this.setState({
-                                                        showDetails: true,
-                                                        selectedMessage: message
-                                                    })
-                                                }
-                                                key={index}
-                                                style={{
-                                                    border:
-                                                        '1px solid lightgrey'
-                                                }}>
-                                                <IonCol size="2">
-                                                    {format(
-                                                        new Date(
-                                                            message.timestamp
-                                                        ),
-                                                        dateFormats.MMddyyZYYHHmmss
-                                                    )}
-                                                </IonCol>
-                                                <IonCol size="2">
-                                                    {message.subject}
-                                                </IonCol>
-                                                <IonCol size="5">
-                                                    {message.message}
-                                                </IonCol>
-                                                <IonCol size="1">
-                                                    {!isEmptyObject(
-                                                        message.emailRecipients
-                                                    )
-                                                        ? 'Y'
-                                                        : 'N'}
-                                                </IonCol>
-                                                <IonCol size="1">
-                                                    {!isEmptyObject(
-                                                        message.smsRecipients
-                                                    )
-                                                        ? 'Y'
-                                                        : 'N'}
-                                                </IonCol>
-                                                <IonCol size="1">
-                                                    {!isEmptyObject(
-                                                        message.pushRecipients
-                                                    )
-                                                        ? 'Y'
-                                                        : 'N'}
-                                                </IonCol>
-                                            </IonItem>
-                                        );
-                                    }
-                                )}
+                                {messages.map((message: Message, index: number) => {
+                                    return (
+                                        <IonItem
+                                            button
+                                            onClick={() =>
+                                                this.setState({
+                                                    showDetails: true,
+                                                    selectedMessage: message
+                                                })
+                                            }
+                                            key={index}
+                                            style={{
+                                                border: '1px solid lightgrey'
+                                            }}>
+                                            <IonCol size='2'>
+                                                {format(
+                                                    new Date(message.timestamp),
+                                                    dateFormats.MMddyyZYYHHmmss
+                                                )}
+                                            </IonCol>
+                                            <IonCol size='2'>{message.subject}</IonCol>
+                                            <IonCol size='5'>{message.message}</IonCol>
+                                            <IonCol size='1'>
+                                                {!isEmptyObject(message.emailRecipients) ? 'Y' : 'N'}
+                                            </IonCol>
+                                            <IonCol size='1'>
+                                                {!isEmptyObject(message.smsRecipients) ? 'Y' : 'N'}
+                                            </IonCol>
+                                            <IonCol size='1'>
+                                                {!isEmptyObject(message.pushRecipients) ? 'Y' : 'N'}
+                                            </IonCol>
+                                        </IonItem>
+                                    );
+                                })}
                             </IonGrid>
                             {!isLoading && isEmptyObject(messages) && (
-                                <IonCard style={{textAlign: 'center'}}>
-                                    <IonCardContent>
-                                        No notifications have been sent.
-                                    </IonCardContent>
+                                <IonCard style={{ textAlign: 'center' }}>
+                                    <IonCardContent>No notifications have been sent.</IonCardContent>
                                 </IonCard>
                             )}
                         </IonContent>
@@ -170,19 +142,21 @@ class NotificationHistory extends React.Component<
                 )}
                 {showDetails && (
                     <IonPage>
-                        <IonHeader>
+                        <IonHeader aria-label='Return to List'>
                             <IonToolbar>
-                                <IonButtons slot="start">
+                                <IonButtons slot='start'>
                                     <IonFabButton
-                                        size="small"
-                                        color="clear"
+                                        style={{ '--box-shadow': 'none' }}
+                                        title='Back'
+                                        size='small'
+                                        color='light'
                                         onClick={() => {
                                             this.setState({
                                                 showDetails: false,
                                                 selectedMessage: null
                                             });
                                         }}>
-                                        <IonIcon icon={arrowBackOutline} />
+                                        <IonIcon icon={arrowBackOutline} title='Back' />
                                     </IonFabButton>
                                 </IonButtons>
                                 <IonTitle>Return to List</IonTitle>
@@ -190,65 +164,58 @@ class NotificationHistory extends React.Component<
                         </IonHeader>
                         <IonContent>
                             <IonGrid>
-                                <IonItem color="light">
-                                    <IonCol size="2">Timestamp</IonCol>
-                                    <IonCol size="2">Subject</IonCol>
-                                    <IonCol size="8">Message</IonCol>
+                                <IonItem color='light'>
+                                    <IonCol size='2'>Timestamp</IonCol>
+                                    <IonCol size='2'>Subject</IonCol>
+                                    <IonCol size='8'>Message</IonCol>
                                 </IonItem>
-                                <IonItem
-                                    style={{border: '1px solid lightgrey'}}>
-                                    <IonCol size="2">
+                                <IonItem style={{ border: '1px solid lightgrey' }}>
+                                    <IonCol size='2'>
                                         {format(
                                             new Date(selectedMessage.timestamp),
                                             dateFormats.MMddyyZYYHHmmss
                                         )}
                                     </IonCol>
-                                    <IonCol size="2">
-                                        {selectedMessage.subject}
-                                    </IonCol>
-                                    <IonCol size="8">
-                                        {selectedMessage.message}
-                                    </IonCol>
+                                    <IonCol size='2'>{selectedMessage.subject}</IonCol>
+                                    <IonCol size='8'>{selectedMessage.message}</IonCol>
                                 </IonItem>
-                                <IonItem color="light">
-                                    <IonCol size="4">Email Recipients</IonCol>
-                                    <IonCol size="4">SMS Recipients</IonCol>
-                                    <IonCol size="4">
-                                        In-App Message Recipients
-                                    </IonCol>
+                                <IonItem color='light'>
+                                    <IonCol size='3'>Email Recipients</IonCol>
+                                    <IonCol size='3'>SMS Recipients</IonCol>
+                                    <IonCol size='3'>In-App Message Recipients</IonCol>
+                                    <IonCol size='3'>Push Recipients</IonCol>
                                 </IonItem>
                                 <IonItem>
-                                    <IonCol size="4">
+                                    <IonCol size='3'>
                                         <IonList>
-                                            {selectedMessage.emailRecipients.map(
-                                                (elem: string) => {
-                                                    return (
-                                                        <IonRow>{elem}</IonRow>
-                                                    );
-                                                }
+                                            {selectedMessage.emailRecipients.map((elem: string) => {
+                                                return <IonRow>{elem}</IonRow>;
+                                            })}
+                                        </IonList>
+                                    </IonCol>
+                                    <IonCol size='3'>
+                                        <IonList>
+                                            {selectedMessage.smsRecipients.map((elem: string) => {
+                                                return <IonRow>{elem}</IonRow>;
+                                            })}
+                                        </IonList>
+                                    </IonCol>
+                                    <IonCol size='3'>
+                                        <IonList>
+                                            {selectedMessage.inAppRecipients ? (
+                                                selectedMessage.inAppRecipients.map((elem: string) => {
+                                                    return <IonRow>{elem}</IonRow>;
+                                                })
+                                            ) : (
+                                                <IonRow></IonRow>
                                             )}
                                         </IonList>
                                     </IonCol>
-                                    <IonCol size="4">
+                                    <IonCol size='3'>
                                         <IonList>
-                                            {selectedMessage.smsRecipients.map(
-                                                (elem: string) => {
-                                                    return (
-                                                        <IonRow>{elem}</IonRow>
-                                                    );
-                                                }
-                                            )}
-                                        </IonList>
-                                    </IonCol>
-                                    <IonCol size="4">
-                                        <IonList>
-                                            {selectedMessage.pushRecipients.map(
-                                                (elem: string) => {
-                                                    return (
-                                                        <IonRow>{elem}</IonRow>
-                                                    );
-                                                }
-                                            )}
+                                            {selectedMessage.pushRecipients.map((elem: string) => {
+                                                return <IonRow>{elem}</IonRow>;
+                                            })}
                                         </IonList>
                                     </IonCol>
                                 </IonItem>

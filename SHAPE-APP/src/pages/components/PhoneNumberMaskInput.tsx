@@ -34,7 +34,7 @@ const PhoneNumberMaskInput: React.FC<ContainerProps> = (props) => {
   };
 
   return (
-    <IonItem>
+    <IonItem style={{marginBottom: ".5em"}}>
       <IonLabel position="stacked">Telephone Number (Voice and SMS)</IonLabel>
       <IonInput
         inputMode="tel"

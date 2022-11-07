@@ -16,7 +16,7 @@ interface PassedProps {
 }
 
 export const HealthEvent = (props: PassedProps) => {
-  let { handleInputChange, value, healthEventSpecification } = props;
+  const { handleInputChange, value, healthEventSpecification } = props;
 
   return (
     <>

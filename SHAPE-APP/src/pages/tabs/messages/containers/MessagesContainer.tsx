@@ -5,7 +5,7 @@ import {
   markAsRead,
   refreshAll,
 } from "../../../../redux/actions/Participant";
-import { Message, User, FirebaseAuth } from "../../../../interfaces/DataTypes";
+import { Inbox, User, FirebaseAuth } from "../../../../interfaces/DataTypes";
 import Messages from "../Messages";
 
 interface PassedProps {
@@ -14,13 +14,13 @@ interface PassedProps {
   markAsReadDispatch: Function;
   fireBaseAuth: FirebaseAuth;
   refreshAllDispatch: Function;
-  inbox: Array<Message>;
+  inbox: Array<Inbox>;
   isLoading: boolean;
 }
 
 class MessagesContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       profile,
       participantInboxDispatch,
       markAsReadDispatch,
@@ -53,19 +53,14 @@ const mapStateToProps = (state: any) => ({
 });
 
 const mapDispatchToProps = (dispatch: any) => ({
-  participantInboxDispatch(participantId: string, org: string) {
-    dispatch(participantInbox(participantId, org));
+  participantInboxDispatch() {
+    dispatch(participantInbox());
   },
-  markAsReadDispatch(participantId: string, messageId: string, org: string) {
-    dispatch(markAsRead(participantId, messageId, org));
+  markAsReadDispatch(messageId: string) {
+    dispatch(markAsRead(messageId));
   },
-  refreshAllDispatch(
-    org: string,
-    participantId: string,
-    userId: string,
-    pushEnabled: boolean
-  ) {
-    dispatch(refreshAll(org, participantId, userId, pushEnabled));
+  refreshAllDispatch() {
+    dispatch(refreshAll());
   },
 });
 

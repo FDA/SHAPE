@@ -2,7 +2,6 @@ import {
     IonItem,
     IonLabel,
     IonList,
-    IonCheckbox,
     IonCol,
     IonButton,
     IonCard,
@@ -10,21 +9,14 @@ import {
     IonRow,
     IonText
 } from '@ionic/react';
-import React, {Component} from 'react';
-import {
-    editUser,
-    getParticipant,
-    getUser,
-    disableUser,
-    enableUser,
-    getQuestionnaires
-} from '../utils/API';
-import {isEmptyObject} from '../utils/Utils';
-import {connect} from 'react-redux';
+import React, { Component } from 'react';
+import { getParticipant, getUserInfo, getQuestionnaires } from '../utils/API';
+import { isEmptyObject } from '../utils/Utils';
+import { connect } from 'react-redux';
 import Loading from '../layout/Loading';
-import {updateSurvey} from '../redux/actions/Survey';
-import {updateQuestionnaire} from '../redux/actions/Questionnaire';
-import {Survey} from '../interfaces/DataTypes';
+import { updateSurvey } from '../redux/actions/Survey';
+import { updateQuestionnaire } from '../redux/actions/Questionnaire';
+import { Survey } from '../interfaces/DataTypes';
 
 interface ReduxProps {
     survey: Survey;
@@ -53,67 +45,86 @@ class ParticipantList extends Component<ReduxProps, State> {
     load() {
         const parent = this;
         let participantList: string[] = [];
-        let {survey} = this.props;
+        let { survey } = this.props;
 
-        let participants = !isEmptyObject(survey.participants)
-            ? survey.participants
-            : [];
+        let participants = !isEmptyObject(survey.participants) ? survey.participants : [];
 
         let promises = participants.map((participantId: string) => {
             return new Promise<void>((resolve, reject) => {
-                getParticipant(participantId)
-                    .then((doc: any) => {
-                        let tempDoc = doc.data;
-                        tempDoc.id = doc.id;
-                        getUser(participantId)
-                            .then((snapshot: any) => {
-                                if (snapshot.length > 0) {
-                                    snapshot.forEach((snap: any) => {
-                                        let data = snap.data;
+                if (survey.public) {
+                    let tempDoc: any = {};
+                    getUserInfo(participantId)
+                        .then((doc: any) => {
+                            let data = doc.data;
+                            tempDoc.active = data.active;
+                            tempDoc.created = true;
+                            tempDoc.userId = doc.id;
+                            tempDoc.dateCreated = data.dateCreated;
+                            tempDoc.firstName = data.firstName;
+                            tempDoc.lastName = data.lastName;
+                            tempDoc.userName = data.userName;
+                            tempDoc.phoneNumber = data.phoneNumber;
+                            tempDoc.optedOut = !isEmptyObject(data.optedOut) ? data.optedOut : false;
+                            participantList.push(tempDoc);
+                            resolve();
+                        })
+                        .catch((e: any) => {
+                            console.error(e);
+                            resolve();
+                        });
+                } else {
+                    getParticipant(participantId)
+                        .then((doc: any) => {
+                            let userId = doc.data.userId;
+                            let tempDoc: any = { participantId: participantId };
+                            if (userId) {
+                                getUserInfo(userId)
+                                    .then((userDoc: any) => {
+                                        let data = userDoc.data;
                                         tempDoc.active = data.active;
                                         tempDoc.created = true;
-                                        tempDoc.userId = snap.id;
+                                        tempDoc.userId = userDoc.id;
                                         tempDoc.dateCreated = data.dateCreated;
                                         tempDoc.firstName = data.firstName;
                                         tempDoc.lastName = data.lastName;
                                         tempDoc.userName = data.userName;
                                         tempDoc.phoneNumber = data.phoneNumber;
-                                        tempDoc.optedOut = !isEmptyObject(
-                                            data.optedOut
-                                        )
+                                        tempDoc.optedOut = !isEmptyObject(data.optedOut)
                                             ? data.optedOut
                                             : false;
                                         participantList.push(tempDoc);
                                         resolve();
+                                    })
+                                    .catch((e: any) => {
+                                        console.error(e);
+                                        resolve();
                                     });
-                                } else {
-                                    tempDoc.created = false;
-                                    participantList.push(tempDoc);
-                                    resolve();
-                                }
-                            })
-                            .catch((e: any) => {
-                                throw Error(e);
-                            });
-                    })
-                    .catch((e: any) => {
-                        console.error(e);
-                        if(parent._isMounted){
-                            parent.setState({
-                                isLoading: false,
-                                error: true
-                            });
-                        }
-                        resolve();
-                    });
+                            } else {
+                                participantList.push(tempDoc);
+                                resolve();
+                            }
+                        })
+                        .catch((e: any) => {
+                            console.error(e);
+                            if (parent._isMounted) {
+                                parent.setState({
+                                    isLoading: false,
+                                    error: true
+                                });
+                            }
+                            resolve();
+                        });
+                }
             });
         });
 
         Promise.all(promises)
             .then(() => {
-                if(parent._isMounted){
+                if (parent._isMounted) {
                     parent.setState({
-                        participantList: participantList,
+                        participantList: [...participantList].sort((p1: any, p2: any) =>
+                            p1.participantId > p2.participantId ? 1 : -1
+                        ),
                         isLoading: false,
                         error: false
                     });
@@ -121,20 +132,20 @@ class ParticipantList extends Component<ReduxProps, State> {
             })
             .catch((err) => {
                 console.error(err);
-                if(parent._isMounted){
-                    this.setState({isLoading: false, error: true});
+                if (parent._isMounted) {
+                    this.setState({ isLoading: false, error: true });
                 }
             });
     }
 
     UNSAFE_componentWillReceiveProps() {
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         this.load();
     }
 
     componentDidMount() {
         this._isMounted = true;
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         this.load();
     }
 
@@ -143,13 +154,9 @@ class ParticipantList extends Component<ReduxProps, State> {
     }
 
     delete = (participantId: string) => {
-        this.setState({isLoading: true});
-        let {
-            survey,
-            updateSurveyDispatch,
-            updateQuestionnaireDispatch
-        } = this.props;
-        let {participants, id} = survey;
+        this.setState({ isLoading: true });
+        let { survey, updateSurveyDispatch, updateQuestionnaireDispatch } = this.props;
+        let { participants, id } = survey;
         participants = participants.filter((elem: string) => {
             return elem !== participantId;
         });
@@ -167,180 +174,100 @@ class ParticipantList extends Component<ReduxProps, State> {
                     let questionnaire = doc.data;
                     let questionnaireParticipants = questionnaire.participants;
                     if (!isEmptyObject(questionnaireParticipants)) {
-                        questionnaireParticipants = questionnaireParticipants.filter(
-                            (elem: string) => {
-                                return elem !== participantId;
-                            }
-                        );
+                        questionnaireParticipants = questionnaireParticipants.filter((elem: string) => {
+                            return elem !== participantId;
+                        });
                         questionnaire.participants = questionnaireParticipants;
                         updateQuestionnaireDispatch(doc.id, questionnaire);
-                        this.setState({isLoading: false});
+                        this.setState({ isLoading: false });
                     }
                 });
             })
             .catch((err: any) => {
                 console.error('Error getting documents', err);
-                this.setState({isLoading: false});
+                this.setState({ isLoading: false });
             });
     };
 
     render() {
-        let {participantList, isLoading, error} = this.state;
-        let {open, locked} = this.props.survey;
-        
-        let disable = (id: string) => {
-            this.setState({isLoading: true});
-            disableUser(id)
-                .then(() => {
-                    editUser(id, {active: false})
-                        .then(() => {
-                            this.load();
-                        });
-                })
-                .catch((err: any) => {
-                    console.error(err);
-                    this.setState({isLoading: false});
-                });
-        };
-
-        let enable = (id: string) => {
-            this.setState({isLoading: true});
-            enableUser(id)
-                .then(() => {
-                    editUser(id, {active: true})
-                        .then(() => {
-                            this.load();
-                        });
-                })
-                .catch((err: any) => {
-                    console.error(err);
-                    this.setState({isLoading: false});
-                });
-        };
+        let { participantList, isLoading, error } = this.state;
+        let { open, locked } = this.props.survey;
+        let { survey } = this.props;
 
         return (
             <>
                 <IonList>
-                    <IonItem color="light">
-                        <IonCol size="2">
+                    <IonItem color='light'>
+                        <IonCol size='2'>
                             <IonLabel>Respondent</IonLabel>
                         </IonCol>
-                        <IonCol size="1">
-                            <IonLabel>First Name</IonLabel>
+                        <IonCol size='2'>
+                            <IonLabel>Name</IonLabel>
                         </IonCol>
-                        <IonCol size="1">
-                            <IonLabel>Last Name</IonLabel>
-                        </IonCol>
-                        <IonCol size="2">
+                        <IonCol size='3'>
                             <IonLabel>Email</IonLabel>
                         </IonCol>
-                        <IonCol size="1">
+                        <IonCol size='1.5'>
                             <IonLabel>Phone Number</IonLabel>
                         </IonCol>
-                        <IonCol size="1">
-                            <IonLabel>Account Created</IonLabel>
+                        <IonCol size='1'>
+                            <IonLabel>Registered</IonLabel>
                         </IonCol>
-                        <IonCol size="1">
+                        <IonCol size='1.5'>
                             <IonLabel>Date Registered</IonLabel>
                         </IonCol>
-                        <IonCol size="1">
-                            <IonLabel>Enabled</IonLabel>
+                        <IonCol size='1'>
+                            <IonLabel>Actions</IonLabel>
                         </IonCol>
-                        <IonCol size="2"></IonCol>
                     </IonItem>
                     {!isLoading &&
-                        participantList.map((participant: any) => {
+                        participantList.map((participant: any, index: number) => {
                             let {
-                                userId,
-                                id,
                                 participantId,
-                                active,
                                 created,
                                 dateCreated,
                                 firstName,
                                 lastName,
                                 userName,
                                 phoneNumber,
-                                optedOut
+                                optedOut,
+                                userId
                             } = participant;
                             return (
-                                <IonItem
-                                    key={id}
-                                    color={optedOut ? 'medium' : ''}>
-                                    <IonCol size="2">
+                                <IonItem key={index} color={optedOut ? 'medium' : ''}>
+                                    <IonCol size='2'>
                                         <IonText>
-                                            {participantId}{' '}
+                                            {participantId ? participantId : userId}{' '}
                                             {optedOut ? ' (Opted Out)' : ''}
                                         </IonText>
                                     </IonCol>
-                                    <IonCol size="1">
-                                        <IonLabel>{firstName}</IonLabel>
-                                    </IonCol>
-                                    <IonCol size="1">
-                                        <IonLabel>{lastName}</IonLabel>
-                                    </IonCol>
-                                    <IonCol size="2">
-                                        <IonLabel>{userName}</IonLabel>
-                                    </IonCol>
-                                    <IonCol size="1">
-                                        <IonLabel>{phoneNumber}</IonLabel>
-                                    </IonCol>
-                                    <IonCol size="1">
+                                    <IonCol size='2'>
                                         <IonLabel>
-                                            {created ? 'Yes' : 'No'}
+                                            {firstName} {lastName}
                                         </IonLabel>
                                     </IonCol>
-                                    <IonCol size="1">
+                                    <IonCol size='3'>
+                                        <IonLabel>{userName}</IonLabel>
+                                    </IonCol>
+                                    <IonCol size='1.5'>
+                                        <IonLabel>{phoneNumber}</IonLabel>
+                                    </IonCol>
+                                    <IonCol size='1'>
+                                        <IonLabel>{created ? 'Yes' : 'No'}</IonLabel>
+                                    </IonCol>
+                                    <IonCol size='1.5'>
                                         <IonLabel>
                                             {!isEmptyObject(dateCreated)
-                                                ? dateCreated
+                                                ? new Date(dateCreated).toLocaleDateString()
                                                 : ''}
                                         </IonLabel>
                                     </IonCol>
-                                    <IonCol size="1">
-                                        <IonCheckbox
-                                            id={`${participantId}-cb`}
-                                            color="primary"
-                                            checked={active}
-                                            disabled={true}
-                                        />
-                                    </IonCol>
-                                    <IonCol size="1">
-                                        {active && (
-                                            <IonButton
-                                                expand="block"
-                                                disabled={optedOut}
-                                                onClick={() =>
-                                                    disable(
-                                                        userId
-                                                    )
-                                                }>
-                                                Disable
-                                            </IonButton>
-                                        )}
-                                        {!active && (
-                                            <IonButton
-                                                expand="block"
-                                                disabled={optedOut}
-                                                onClick={() =>
-                                                    enable(
-                                                        userId
-                                                    )
-                                                }>
-                                                Enable
-                                            </IonButton>
-                                        )}
-                                    </IonCol>
-                                    <IonCol size="2">
+                                    <IonCol size='1'>
                                         <IonButton
-                                            color="danger"
-                                            disabled={
-                                                (!isEmptyObject(locked)
-                                                    ? locked
-                                                    : false) && !open
-                                            }
+                                            color='danger'
+                                            disabled={(!isEmptyObject(locked) ? locked : false) && !open}
                                             onClick={(e: any) =>
-                                                this.delete(participantId)
+                                                this.delete(survey.public ? userId : participantId)
                                             }>
                                             Remove
                                         </IonButton>
@@ -351,25 +278,21 @@ class ParticipantList extends Component<ReduxProps, State> {
                 </IonList>
                 {isLoading && (
                     <IonRow text-center>
-                        <IonCol size="12" style={{textAlign: 'center'}}>
+                        <IonCol size='12' style={{ textAlign: 'center' }}>
                             <Loading />
                         </IonCol>
                     </IonRow>
                 )}
                 {error && (
-                    <IonCard style={{textAlign: 'center'}}>
+                    <IonCard style={{ textAlign: 'center' }}>
                         <IonCardContent>
-                            <IonText color="danger">
-                                Error loading respondents. Try refreshing.
-                            </IonText>
+                            <IonText color='danger'>Error loading respondents. Try refreshing.</IonText>
                         </IonCardContent>
                     </IonCard>
                 )}
-                {isEmptyObject(participantList) && !isLoading && (
-                    <IonCard style={{textAlign: 'center'}}>
-                        <IonCardContent>
-                            No respondents have been added to this survey.
-                        </IonCardContent>
+                {isEmptyObject(participantList) && !isLoading && !error && (
+                    <IonCard style={{ textAlign: 'center' }}>
+                        <IonCardContent>No respondents have been added to this survey.</IonCardContent>
                     </IonCard>
                 )}
             </>
@@ -388,10 +311,7 @@ function mapDispatchToProps(dispatch: any) {
         updateSurveyDispatch(surveyId: string, survey: any) {
             dispatch(updateSurvey(surveyId, survey));
         },
-        updateQuestionnaireDispatch(
-            questionnaireId: string,
-            questionnaire: any
-        ) {
+        updateQuestionnaireDispatch(questionnaireId: string, questionnaire: any) {
             dispatch(updateQuestionnaire(questionnaireId, questionnaire));
         }
     };

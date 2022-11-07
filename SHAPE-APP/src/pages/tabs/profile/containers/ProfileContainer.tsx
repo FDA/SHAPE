@@ -25,7 +25,7 @@ interface PassedProps {
 
 class ProfileContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       logoutDispatch,
       profile,
       fireBaseAuth,

@@ -7,15 +7,12 @@ import {
     IonListHeader,
     IonIcon,
     IonReorderGroup,
-    IonReorder
+    IonReorder,
+    IonButton
 } from '@ionic/react';
 import React from 'react';
-import {QuestionChoice} from '../interfaces/DataTypes';
-import {
-    addCircleOutline,
-    reorderTwoOutline,
-    trashOutline
-} from 'ionicons/icons';
+import { QuestionChoice } from '../interfaces/DataTypes';
+import { addCircleOutline, reorderTwoOutline, trashOutline } from 'ionicons/icons';
 
 interface ReduxProps {
     type: string;
@@ -40,52 +37,52 @@ class BaseSelect extends React.Component<ReduxProps> {
         } = this.props;
 
         return (
-            <IonList lines="full" class="ion-no-margin ion-no-padding">
+            <IonList lines='full' class='ion-no-margin ion-no-padding'>
                 <IonListHeader>
-                    <IonLabel>
-                        Choices<IonText color="danger">*</IonText>
-                        &nbsp;&nbsp;
-                        <IonIcon
-                            icon={addCircleOutline}
-                            style={{
-                                cursor: 'pointer',
-                                verticalAlign: 'middle'
-                            }}
-                            onClick={() => addChoice()}></IonIcon>
-                    </IonLabel>
+                    <IonItem lines='none'>
+                        <IonLabel id='newQuestionChoice'>
+                            Choices<IonText color='danger'>*</IonText>
+                        </IonLabel>
+                        <IonButton
+                            aria-labelledby='newQuestionChoice'
+                            color='dark'
+                            onClick={() => addChoice()}>
+                            <IonIcon
+                                icon={addCircleOutline}
+                                style={{
+                                    cursor: 'pointer',
+                                    verticalAlign: 'middle'
+                                }}></IonIcon>
+                        </IonButton>
+                    </IonItem>
                 </IonListHeader>
-                <IonReorderGroup
-                    disabled={false}
-                    onIonItemReorder={(e: any) => doReorder(e)}>
+                <IonReorderGroup disabled={false} onIonItemReorder={(e: any) => doReorder(e)}>
                     {choices.map((choice: QuestionChoice, index: number) => {
                         return (
-                            <IonItem lines="inset" key={choice.index}>
+                            <IonItem lines='inset' key={choice.index}>
                                 <IonLabel>
                                     Value
-                                    <IonText color="danger">*</IonText> &nbsp;
+                                    <IonText color='danger'>*</IonText> &nbsp;
                                 </IonLabel>
                                 <IonInput
                                     value={choice.value}
-                                    onBlur={(e) =>
-                                        handleChoiceValueChange(e, index)
-                                    }></IonInput>
+                                    onBlur={(e) => handleChoiceValueChange(e, index)}></IonInput>
                                 <IonLabel>
                                     Display Text
-                                    <IonText color="danger">*</IonText>
+                                    <IonText color='danger'>*</IonText>
                                     &nbsp;
                                 </IonLabel>
                                 <IonInput
                                     value={choice.text}
-                                    onBlur={(e) =>
-                                        handleChoiceTextChange(e, index)
-                                    }></IonInput>
-                                <IonIcon
-                                    slot="end"
-                                    icon={trashOutline}
-                                    style={{cursor: 'pointer'}}
-                                    onClick={() => deleteChoice(index)}
-                                />
-                                <IonReorder slot="start">
+                                    onBlur={(e) => handleChoiceTextChange(e, index)}></IonInput>
+                                <IonButton fill='clear' color='medium' onClick={() => deleteChoice(index)}>
+                                    <IonIcon
+                                        slot='end'
+                                        icon={trashOutline}
+                                        style={{ cursor: 'pointer', fontSize: '24px' }}
+                                    />
+                                </IonButton>
+                                <IonReorder slot='start'>
                                     <IonIcon icon={reorderTwoOutline} />
                                 </IonReorder>
                             </IonItem>

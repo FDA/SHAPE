@@ -11,26 +11,17 @@ import {
     IonCardContent,
     IonAlert
 } from '@ionic/react';
-import {isEmptyObject, guid} from '../utils/Utils';
-import React, {Component} from 'react';
-import {
-    getQuestionTemplates,
-    editQuestionTemplate,
-    deleteQuestionTemplate,
-    storeImage
-} from '../utils/API';
+import { isEmptyObject, guid } from '../utils/Utils';
+import React, { Component } from 'react';
+import { getQuestionTemplates, editQuestionTemplate, deleteQuestionTemplate, storeImage } from '../utils/API';
 import QuestionCard from './QuestionCard/QuestionCard';
-import {connect} from 'react-redux';
-import {updateQuestionnaire} from '../redux/actions/Questionnaire';
-import {withRouter, RouteComponentProps} from 'react-router-dom';
-import {
-    Questionnaire,
-    QuestionChoice,
-    InfoCardImageSection
-} from '../interfaces/DataTypes';
-import {QuestionnaireQuestionComponent} from '../interfaces/Components';
-import {cloneDeep} from 'lodash';
-import {questionTypes, sectionTypes} from '../utils/Constants';
+import { connect } from 'react-redux';
+import { updateQuestionnaire } from '../redux/actions/Questionnaire';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { Questionnaire, QuestionChoice, InfoCardImageSection } from '../interfaces/DataTypes';
+import { QuestionnaireQuestionComponent } from '../interfaces/Components';
+import { cloneDeep } from 'lodash';
+import { questionTypes, sectionTypes } from '../utils/Constants';
 
 interface ReduxProps extends RouteComponentProps {
     questionnaire: Questionnaire;
@@ -64,21 +55,17 @@ class AddSearch extends Component<ReduxProps, State> {
         if (e.target.checked) {
             tempList.push(question);
         } else {
-            tempList = tempList.filter(
-                (elem: QuestionnaireQuestionComponent) => {
-                    return elem.id !== question.id;
-                }
-            );
+            tempList = tempList.filter((elem: QuestionnaireQuestionComponent) => {
+                return elem.id !== question.id;
+            });
         }
-        this.setState({checkedList: tempList});
+        this.setState({ checkedList: tempList });
     };
 
     add = () => {
-        let {questionnaire} = this.props;
+        let { questionnaire } = this.props;
         let questionnaireId = questionnaire.id;
-        let questions = !isEmptyObject(questionnaire.questions)
-            ? cloneDeep(questionnaire.questions)
-            : [];
+        let questions = !isEmptyObject(questionnaire.questions) ? cloneDeep(questionnaire.questions) : [];
 
         let updatedQuestionList = this.state.checkedList;
 
@@ -100,14 +87,12 @@ class AddSearch extends Component<ReduxProps, State> {
 
     cancel = (id: string) => {
         this.setState({
-            questionList: this.state.questionList.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    if (elem.id === id) {
-                        elem.editing = false;
-                        return elem;
-                    } else return elem;
-                }
-            )
+            questionList: this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+                if (elem.id === id) {
+                    elem.editing = false;
+                    return elem;
+                } else return elem;
+            })
         });
     };
 
@@ -115,15 +100,13 @@ class AddSearch extends Component<ReduxProps, State> {
         let promises: Promise<any>[] = [];
 
         let question = {
-            ...this.state.questionList.find(
-                (elem: QuestionnaireQuestionComponent) => {
-                    return elem.id === id;
-                }
-            )
+            ...this.state.questionList.find((elem: QuestionnaireQuestionComponent) => {
+                return elem.id === id;
+            })
         };
 
         if (question.type === questionTypes.INFO) {
-            let {sections} = question;
+            let { sections } = question;
             for (let key in sections) {
                 let section = sections[key] as InfoCardImageSection;
                 if (section.type === sectionTypes.IMAGE) {
@@ -153,99 +136,83 @@ class AddSearch extends Component<ReduxProps, State> {
 
     editRow = (id: string) => {
         this.setState({
-            questionList: this.state.questionList.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    if (elem.id === id) {
-                        elem.editing = true;
-                        return elem;
-                    } else return elem;
-                }
-            )
+            questionList: this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+                if (elem.id === id) {
+                    elem.editing = true;
+                    return elem;
+                } else return elem;
+            })
         });
     };
 
     handleRowChange = (e: any, id: string) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
         this.setState({
-            questionList: this.state.questionList.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    if (elem.id === id) {
-                        //@ts-ignore
-                        elem[name] = value;
-                        return elem;
-                    } else return elem;
-                }
-            )
+            questionList: this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+                if (elem.id === id) {
+                    //@ts-ignore
+                    elem[name] = value;
+                    return elem;
+                } else return elem;
+            })
         });
     };
 
     handleOptionChange = (e: any, id: string) => {
-        const {name, value} = e.target;
-        let {questionList} = this.state;
+        const { name, value } = e.target;
+        let { questionList } = this.state;
         this.setState({
-            questionList: questionList.map(
-                (elem: QuestionnaireQuestionComponent) => {
-                    if (elem.id === id) {
-                        //@ts-ignore
-                        elem.options[name] = value;
-                        //@ts-ignore
-                        return elem.options[name];
-                    } else return elem;
-                }
-            )
+            questionList: questionList.map((elem: QuestionnaireQuestionComponent) => {
+                if (elem.id === id) {
+                    //@ts-ignore
+                    elem.options[name] = value;
+                    //@ts-ignore
+                    return elem.options[name];
+                } else return elem;
+            })
         });
     };
 
     handleChoiceChange = (e: any, id: string) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
         let questionList = cloneDeep(this.state.questionList);
 
-        questionList = questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                const nameArr = name.split('-');
-                const type = nameArr[0];
-                const order = parseInt(nameArr[1]);
-                if (elem.name === id) {
-                    if (type === 'value') {
-                        elem.choices = elem.choices.map(
-                            (choice: QuestionChoice) => {
-                                if (choice.order === order) {
-                                    choice.value = value;
-                                }
-                                return choice;
-                            }
-                        );
-                    } else if (type === 'text') {
-                        //type is text
-                        elem.choices = elem.choices.map(
-                            (choice: QuestionChoice) => {
-                                if (choice.order === order) {
-                                    choice.text = value;
-                                }
-                                return choice;
-                            }
-                        );
-                    }
+        questionList = questionList.map((elem: QuestionnaireQuestionComponent) => {
+            const nameArr = name.split('-');
+            const type = nameArr[0];
+            const order = parseInt(nameArr[1]);
+            if (elem.name === id) {
+                if (type === 'value') {
+                    elem.choices = elem.choices.map((choice: QuestionChoice) => {
+                        if (choice.order === order) {
+                            choice.value = value;
+                        }
+                        return choice;
+                    });
+                } else if (type === 'text') {
+                    //type is text
+                    elem.choices = elem.choices.map((choice: QuestionChoice) => {
+                        if (choice.order === order) {
+                            choice.text = value;
+                        }
+                        return choice;
+                    });
                 }
-                return elem;
             }
-        );
-        this.setState({questionList: questionList});
+            return elem;
+        });
+        this.setState({ questionList: questionList });
     };
 
     handleChoiceDelete = (id: string, choiceId: string) => {
-        let QL = this.state.questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.id === id) {
-                    elem.choices = elem.choices.filter(
-                        (choice: QuestionChoice) => {
-                            return choice.index !== choiceId;
-                        }
-                    );
-                }
-                return elem;
+        let QL = this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.id === id) {
+                elem.choices = elem.choices.filter((choice: QuestionChoice) => {
+                    return choice.index !== choiceId;
+                });
             }
-        );
+            return elem;
+        });
 
         this.setState({
             questionList: QL
@@ -253,32 +220,30 @@ class AddSearch extends Component<ReduxProps, State> {
     };
 
     handleSectionChange = (sections: any, id: string) => {
-        let questionList = this.state.questionList.map(
-            (elem: QuestionnaireQuestionComponent) => {
-                if (elem.id === id) {
-                    elem.sections = sections;
-                    return elem;
-                } else return elem;
-            }
-        );
-        this.setState({questionList: questionList});
+        let questionList = this.state.questionList.map((elem: QuestionnaireQuestionComponent) => {
+            if (elem.id === id) {
+                elem.sections = sections;
+                return elem;
+            } else return elem;
+        });
+        this.setState({ questionList: questionList });
     };
 
     deleteRow = (questionId: string) => {
-        this.setState({showDeleteAlert: true, questionId: questionId});
+        this.setState({ showDeleteAlert: true, questionId: questionId });
     };
 
     handleSearchChange = (text: string) => {
-        this.setState({searchText: text});
+        this.setState({ searchText: text });
     };
 
     finalSearch = () => {
         let searchText = this.state.searchText;
-        this.setState({finalSearchText: searchText});
+        this.setState({ finalSearchText: searchText });
     };
 
     clear = () => {
-        this.setState({searchText: '', finalSearchText: ''});
+        this.setState({ searchText: '', finalSearchText: '' });
     };
 
     load = () => {
@@ -297,7 +262,7 @@ class AddSearch extends Component<ReduxProps, State> {
                     questionList.push(question);
                 });
 
-                this.setState({questionList: questionList});
+                this.setState({ questionList: questionList });
             })
             .catch((err: any) => {
                 console.error('Error getting documents', err);
@@ -309,51 +274,34 @@ class AddSearch extends Component<ReduxProps, State> {
     }
 
     render() {
-        let {
-            questionList,
-            searchText,
-            finalSearchText,
-            showDeleteAlert,
-            questionId
-        } = this.state;
+        let { questionList, searchText, finalSearchText, showDeleteAlert, questionId } = this.state;
 
         return (
             <>
-                <IonHeader>
+                <IonHeader aria-label='Search and Add Questions'>
                     <IonToolbar>
                         <IonList>
-                            <IonListHeader>
-                                <IonCol size="3">
-                                    <IonTitle>
-                                        Search and Add Questions
-                                    </IonTitle>
+                            <IonListHeader aria-label='Search and Add Questions List'>
+                                <IonCol size='3'>
+                                    <IonTitle>Search and Add Questions</IonTitle>
                                 </IonCol>
-                                <IonCol size="5">
+                                <IonCol size='5'>
                                     <IonSearchbar
                                         value={searchText}
                                         onIonChange={(e: any) =>
-                                            this.handleSearchChange(
-                                                e.detail.value!
-                                            )
+                                            this.handleSearchChange(e.detail.value!)
                                         }></IonSearchbar>
                                 </IonCol>
-                                <IonCol size="1">
-                                    <IonButton
-                                        onClick={() => this.finalSearch()}>
-                                        Search
-                                    </IonButton>
+                                <IonCol size='1'>
+                                    <IonButton onClick={() => this.finalSearch()}>Search</IonButton>
                                 </IonCol>
-                                <IonCol size="1">
-                                    <IonButton
-                                        onClick={() => this.clear()}
-                                        color="secondary">
+                                <IonCol size='1'>
+                                    <IonButton onClick={() => this.clear()} color='secondary'>
                                         Clear
                                     </IonButton>
                                 </IonCol>
-                                <IonCol size="2">
-                                    <IonButton
-                                        fill="solid"
-                                        onClick={() => this.add()}>
+                                <IonCol size='2'>
+                                    <IonButton fill='solid' onClick={() => this.add()}>
                                         Add Question(s)
                                     </IonButton>
                                 </IonCol>
@@ -363,18 +311,14 @@ class AddSearch extends Component<ReduxProps, State> {
                 </IonHeader>
                 <IonList>
                     {isEmptyObject(finalSearchText) && (
-                        <IonCard style={{textAlign: 'center'}}>
-                            <IonCardContent>
-                                Search to populate questions.
-                            </IonCardContent>
+                        <IonCard style={{ textAlign: 'center' }}>
+                            <IonCardContent>Search to populate questions.</IonCardContent>
                         </IonCard>
                     )}
                     {!isEmptyObject(finalSearchText) &&
                         questionList
                             .filter((elem: QuestionnaireQuestionComponent) => {
-                                return elem.title
-                                    .toLowerCase()
-                                    .includes(finalSearchText.toLowerCase());
+                                return elem.title.toLowerCase().includes(finalSearchText.toLowerCase());
                             })
                             .map((question: QuestionnaireQuestionComponent) => {
                                 return (
@@ -387,18 +331,10 @@ class AddSearch extends Component<ReduxProps, State> {
                                         editRow={this.editRow}
                                         cancel={this.cancel}
                                         handleRowChange={this.handleRowChange}
-                                        handleChoiceChange={
-                                            this.handleChoiceChange
-                                        }
-                                        handleChoiceDelete={
-                                            this.handleChoiceDelete
-                                        }
-                                        handleOptionChange={
-                                            this.handleOptionChange
-                                        }
-                                        handleSectionChange={
-                                            this.handleSectionChange
-                                        }
+                                        handleChoiceChange={this.handleChoiceChange}
+                                        handleChoiceDelete={this.handleChoiceDelete}
+                                        handleOptionChange={this.handleOptionChange}
+                                        handleSectionChange={this.handleSectionChange}
                                     />
                                 );
                             })}
@@ -406,7 +342,7 @@ class AddSearch extends Component<ReduxProps, State> {
                 <IonAlert
                     isOpen={showDeleteAlert}
                     onDidDismiss={() => {
-                        this.setState({showDeleteAlert: false});
+                        this.setState({ showDeleteAlert: false });
                     }}
                     header={'Delete'}
                     message={`Are you sure you want to permanently delete this question template?`}
@@ -423,13 +359,8 @@ class AddSearch extends Component<ReduxProps, State> {
                                     .then(() => {
                                         this.setState({
                                             questionList: questionList.filter(
-                                                (
-                                                    question: QuestionnaireQuestionComponent
-                                                ) => {
-                                                    return (
-                                                        question.id !==
-                                                        questionId
-                                                    );
+                                                (question: QuestionnaireQuestionComponent) => {
+                                                    return question.id !== questionId;
                                                 }
                                             )
                                         });
@@ -454,16 +385,10 @@ function mapStateToProps(state: any) {
 
 function mapDispatchToProps(dispatch: any) {
     return {
-        updateQuestionnaireDispatch(
-            questionnaireId: string,
-            questionnaire: any
-        ) {
+        updateQuestionnaireDispatch(questionnaireId: string, questionnaire: any) {
             dispatch(updateQuestionnaire(questionnaireId, questionnaire));
         }
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withRouter(AddSearch));
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(AddSearch));

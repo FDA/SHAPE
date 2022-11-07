@@ -70,6 +70,13 @@ const array = (field: string) => {
       .withMessage("must be Array")
 };
 
+const optionalArray = (field: string) => {
+   return check(field)
+      .optional()
+      .isArray()
+      .withMessage("must be Array")
+};
+
 const optionalNumber = (field: string) => {
    return check(field)
       .optional()
@@ -77,11 +84,11 @@ const optionalNumber = (field: string) => {
       .withMessage("must be Number")
 };
 
-const optionalArray = (field: string) => {
+const optionalObject = (field: string) => {
    return check(field)
       .optional()
-      .isArray()
-      .withMessage("must be Array")
+      .isObject()
+      .withMessage("must be Object")
 };
 
 
@@ -108,23 +115,22 @@ export const createImageValidation = () => {
 export const createInboxValidation = () => {
    return [
       string("participantId"),
-      optionalArray("messages"),
-      //messages
-      optionalString("messages.*.message"),
-      optionalBoolean("messages.*.read"),
-      optionalString("messages.*.subject"),
-      optionalString("messages.*.timestamp"),
+      string("userId"),
+      string("message"),
+      string("subject"),
+      string("timestamp"),
+      optionalBoolean("read")
    ];
 };
 
 export const updateInboxValidation = () => {
    return [
-      optionalArray("messages"),
-      //messages
-      optionalString("messages.*.message"),
-      optionalBoolean("messages.*.read"),
-      optionalString("messages.*.subject"),
-      optionalString("messages.*.timestamp")
+      string("participantId"),
+      string("userId"),
+      string("message"),
+      string("subject"),
+      string("timestamp"),
+      optionalBoolean("read")
    ];
 };
 
@@ -136,7 +142,7 @@ export const createInformedConsentValidation = () => {
       string("participantId"),
       string("emailSent"),
       string("dateAgreed"),
-      string("surveyId"),
+      string("userId"),
    ];
 };
 
@@ -149,6 +155,7 @@ export const createMessageValidation = () => {
       string("timestamp"),
       optionalArray("emailRecipients"),
       optionalArray("pushRecipients"),
+      optionalArray("inAppRecipients"),
       optionalArray("smsRecipients"),
    ];
 };
@@ -162,7 +169,8 @@ export const createParticipantValidation = () => {
       //securityQuestions
       optionalString("securityQuestions.*.question"),
       optionalString("securityQuestions.*.answer"),
-      optionalBoolean("public")
+      optionalBoolean("public"),
+      optionalBoolean("optedOut")
    ];
 };
 
@@ -174,6 +182,7 @@ export const updateParticipantValidation = () => {
       optionalString("securityQuestions.*.question"),
       optionalString("securityQuestions.*.answer"),
       optionalBoolean("public"),
+      optionalBoolean("optedOut")
    ]
 }
 
@@ -192,6 +201,8 @@ export const createParticipantDiaryValidation = () => {
       string("participantId"),
       string("formType").isIn(formTypes).withMessage("invalid formType"),
       string("dateWritten"),
+      string("userId"),
+      optionalString("profileId"),
       // Event
       optionalNumber("healthEvent"),
       optionalString("healthEventSpecification"),
@@ -204,7 +215,8 @@ export const createParticipantDiaryValidation = () => {
       optionalNumber("eventTreatment"),
       optionalNumber("postEventTreatment"),
       // Dr Visit
-      optionalArray("assessers"),
+      //optionalArray("assessers"),
+      optionalNumber("assessers"),
       optionalString("assesserText"),
       optionalString("GMFCScore"),
       optionalNumber("GMFCType"),
@@ -215,7 +227,7 @@ export const createParticipantDiaryValidation = () => {
       optionalArray("device"),
       // Withdrawl
       optionalString("withdrawalDate"),
-      optionalString("withdrawalReason"),
+      optionalString("withdrawalReason")
    ];
 };
 
@@ -244,7 +256,8 @@ export const updateParticipantDiaryValidation = () => {
       optionalNumber("eventTreatment"),
       optionalNumber("postEventTreatment"),
       // Dr Visit
-      optionalArray("assessers"),
+      //optionalArray("assessers"),
+      optionalNumber("assessers"),
       optionalString("assesserText"),
       optionalString("GMFCScore"),
       optionalNumber("GMFCType"),
@@ -270,6 +283,8 @@ export const createParticipantResponseValidation = () => {
       string("participantId"),
       string("dateWritten"),
       optionalArray("responses"),
+      string("userId"),
+      optionalString("profileId")
    ];
 };
 
@@ -352,8 +367,11 @@ export const createQuestionniareValidation = () => {
       string("dateCreated"),
       boolean("open"),
       optionalBoolean("archived"),
+      optionalBoolean("locked"),
       optionalArray("participants"),
-      optionalArray("questions")
+      optionalArray("questions"),
+      optionalBoolean("public"),
+      optionalObject("form")
    ];
 };
 
@@ -367,7 +385,9 @@ export const updateQuestionnaireValidation = () => {
       optionalBoolean("archived"),
       optionalBooleanOrNull("locked"), 
       optionalArray("participants"),
-      optionalArray("questions")
+      optionalArray("questions"),
+      optionalBoolean("public"),
+      optionalObject("form")
    ];
 }
 
@@ -381,8 +401,10 @@ export const createSurveyValidation = () => {
       string("informedConsent"),
       string("dateCreated"),
       boolean("open"),
+      optionalBoolean("locked"),
       optionalBoolean("archived"),
       optionalArray("participants"),
+      optionalBoolean("public"),
    ];
 };
 
@@ -395,7 +417,9 @@ export const updateSurveyValidation = () => {
       optionalBoolean("open"),
       optionalBooleanOrNull("locked"),
       optionalBoolean("archived"),
-      optionalArray("participants")
+      optionalArray("participants"),
+      optionalBoolean("public"),
+      optionalArray("scheduledJobs")
    ];
 };
 

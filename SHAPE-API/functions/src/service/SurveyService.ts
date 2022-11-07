@@ -1,12 +1,13 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 import { CallbackFunction, ResponseData } from "../interfaces/components";
 import {Survey} from "../interfaces";
 
-admin.initializeApp(functions.config().firebase, 'survey');
+initializeApp(functions.config().firebase, 'survey');
 
 export class SurveyService {
-    db = admin.firestore();
+    db = getFirestore();
     collection = "survey";
 
     private processSurvey(surveyQuerySnapshot: any, callback: CallbackFunction) {
@@ -47,18 +48,18 @@ export class SurveyService {
         }
     }
 
-    firestoreCollection(collectionName: string): FirebaseFirestore.Query<FirebaseFirestore.DocumentData> {
+    private firestoreCollection(collectionName: string): FirebaseFirestore.Query<FirebaseFirestore.DocumentData> {
         return this.db.collection(collectionName);
     }
 
     public complexQuery(query: any, org: string, callback: CallbackFunction) {
         let request = this.firestoreCollection(this.collection);
 
-        for (let q of query) {
+        for (const q of query) {
             request = request.where(q.key, q.operator, q.value);
         }
         if (org !== "ALL") {
-            request = request.where("org", "==", org)
+            request = request.where("org", "==", org);
         }
         request.get().then((surveySnapshot: any) => {
             this.processSurvey(surveySnapshot, callback);
@@ -82,7 +83,7 @@ export class SurveyService {
         } else {
             this.db.collection(this.collection)
                 .where("org", "==", org)
-                .where("participantId", "==", participantId)
+                .where("participants", "array-contains", participantId)
                 .get()
                 .then((surveyQuerySnapshot) => {
                     this.processSurvey(surveyQuerySnapshot, callback);

@@ -1,7 +1,13 @@
-export function FHIRResponse(responses: any, response: any) {
+import { isEmptyObject, guid } from "./utils";
+
+export function FHIRResponse(responses: any, response: any, subject: string) {
    return {
+      fullUrl: `QuestionnaireResponse/${guid()}`,
       resource: {
          resourceType: "QuestionnaireResponse",
+         subject: {
+            reference: subject
+         },
          meta: {
             profile: [
                "http://ibm.com/fhir/fda/shape/StructureDefinition/ibm-fda-shape-response",
@@ -27,7 +33,7 @@ export function FHIRResponse(responses: any, response: any) {
             system: "http://ibm.com/fhir/fda/SHAPE/identifier",
             value: response.id, //"${id}"
          },
-         status: "completed",
+         status: !isEmptyObject(response.systemGenerated) ? "stopped" : "completed",
          source: {
             identifier: {
                system: "http://ibm.com/fhir/fda/SHAPE/participantId",
@@ -50,11 +56,13 @@ export function FHIRAnswer(r: any) {
    if (Array.isArray(response)) {
       const answers: any = [];
       for (const res of response) {
-         answers.push({ valueString: res.toString().trim() });
+         const value = !isEmptyObject(res) ? res.toString().trim() : "";
+         answers.push({ valueString: value });
       }
       formattedResponse.answer = answers;
    } else {
-      formattedResponse.answer = [{ valueString: response.toString().trim() }];
+      const value = !isEmptyObject(response) ? response.toString().trim() : "";
+      formattedResponse.answer = [{ valueString: value }];
    }
 
    return formattedResponse;

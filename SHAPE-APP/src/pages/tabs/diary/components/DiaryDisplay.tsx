@@ -1,134 +1,214 @@
-import React from "react";
-import { IonItem } from "@ionic/react";
+import React from 'react';
 import {
-  optionsArr, //healthEvent
-  outcomeChoices, //outcome
-  treatmentChoices, //eventTreatment, postEventTreatment
-  assessmentArr, //assessers
-  GMFCArr, //GMFCType
-  treatmentVals, //prescription
-  deviceVals, //device
-  ongoingArr, //ongoingStatus
-  doctorVisit,
-  withdrawl,
-  he,
-} from "../event-forms/DiaryMappings";
+    IonButton,
+    IonButtons,
+    IonContent,
+    IonHeader,
+    IonItem,
+    IonModal,
+    IonTitle,
+    IonToolbar
+} from '@ionic/react';
+import {
+    optionsArr, //healthEvent
+    outcomeChoices, //outcome
+    treatmentChoices, //eventTreatment, postEventTreatment
+    assessmentArr, //assessers
+    GMFCArr, //GMFCType
+    treatmentVals, //prescription
+    deviceVals, //device
+    ongoingArr, //ongoingStatus
+    doctorVisit,
+    withdrawal,
+    he,
+    clinicalEncounterHealthEventArr
+} from '../event-forms/DiaryMappings';
+import { format } from 'date-fns';
+import { dateFormats } from '../../../../utils/Constants';
+import { isEmptyObject } from '../../../../utils/Utils';
 
 interface PassedProps {
-  displayedData: string;
+    displayedData: string;
+    displayedItem: string;
+    router: HTMLElement;
+    modalOpen: boolean;
+    closeModal: Function;
 }
 
+const getClinicalVisitLabel = (data: any, key: string) => {
+    let value = data[key];
+    if (key === 'assessers' && typeof value === 'object') {
+        for (let i = 0; i < value.length; i++) {
+            const val = value[i];
+            const valLookup = assessmentArr.find((item) => item.val === val) || {
+                text: ''
+            };
+            value[i] = valLookup.text;
+        }
+    }
+    if (key === 'assessers' && typeof value === 'number') {
+        const valLookup = assessmentArr.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'prescription') {
+        const valLookup = treatmentVals.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'device') {
+        for (let i = 0; i < value.length; i++) {
+            const val = value[i];
+            const valLookup = deviceVals.find((item) => item.val === val) || {
+                text: ''
+            };
+            value[i] = valLookup.text;
+        }
+    }
+    if (key === 'healthEvent') {
+        const valLookup = clinicalEncounterHealthEventArr.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'ongoingStatus') {
+        const valLookup = ongoingArr.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'outcome') {
+        const valLookup = outcomeChoices.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'GMFCType') {
+        const valLookup = GMFCArr.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+
+    return value;
+};
+
+const getHealthEventLabel = (data: any, key: string) => {
+    let value = data[key];
+    if (key === 'healthEvent') {
+        const valLookup = optionsArr.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'outcome') {
+        const valLookup = outcomeChoices.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+    if (key === 'eventTreatment' || key === 'postEventTreatment') {
+        const valLookup = treatmentChoices.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+
+    if (key === 'ongoingStatus') {
+        const valLookup = ongoingArr.find((item) => item.val === value) || {
+            text: ''
+        };
+        value = valLookup.text;
+    }
+
+    return value;
+};
+
+const formatDates = ['dateWritten', 'withdrawalDate'];
+
+const getDisplayValue = (key: string, labelValue: string, keyValue: string) => {
+    if (formatDates.includes(key)) {
+        if (key === 'dateWritten') {
+            return `${labelValue}: ${
+                keyValue ? format(new Date(keyValue), dateFormats.MMddyyyy + ' HH:mm:ss') : ''
+            }`;
+        }
+        return `${labelValue}: ${keyValue ? format(new Date(keyValue), dateFormats.MMddyyyy) : ''}`;
+    } else {
+        return `${labelValue}: ${!isEmptyObject(keyValue) ? keyValue : 'N/A'}`;
+    }
+};
+
+const getDisplayData = (data: any, formType: string) => {
+    if (formType === 'Clinical Visit') {
+        return doctorVisit.map(({ label: key, value: labelValue }) => {
+            const keyValue = getClinicalVisitLabel(data, key);
+            return getDisplayValue(key, labelValue, keyValue);
+        });
+    } else if (formType === 'Health Event') {
+        return he.map(({ label: key, value: labelValue }) => {
+            const keyValue = getHealthEventLabel(data, key);
+            return getDisplayValue(key, labelValue, keyValue);
+        });
+    } else if (formType === 'Withdrawal') {
+        return withdrawal.map(({ label: key, value: labelValue }) => {
+            const keyValue = data[key];
+            return getDisplayValue(key, labelValue, keyValue);
+        });
+    } else return [];
+};
+
 export const DiaryDisplay = (props: PassedProps) => {
-  let { displayedData } = props;
-  let data = JSON.parse(displayedData);
-  delete data["participantId"];
-  delete data["surveyId"];
-  delete data["org"];
-  const formType = data.formType;
-  delete data["formType"];
+    const { displayedData, displayedItem, router, modalOpen, closeModal } = props;
+    let data: any = {};
+    let formType = '';
+    let displayTitle = displayedItem;
 
-  let keys: any = Object.keys(data);
+    if (displayedItem === 'Clinical Visit') displayTitle = 'Clinical Encounter';
+    if (displayedItem === 'Withdrawal') displayTitle = 'Study Withdrawal';
 
-  const getClinicalVisitLabel = (key: string) => {
-    let value = data[key];
-    if (key === "assessers") {
-      for (let i = 0; i < value.length; i++) {
-        let val = value[i];
-        let valLookup = assessmentArr.find((item) => item.val === val) || {
-          text: "",
-        };
-        value[i] = valLookup.text;
-      }
-    }
-    if (key === "GMFCType") {
-      let valLookup = GMFCArr.find((item) => item.val === value) || {
-        text: "",
-      };
-      value = valLookup.text;
-    }
-    if (key === "treatmentVals") {
-      let valLookup = treatmentVals.find((item) => item.val === value) || {
-        text: "",
-      };
-      value = valLookup.text;
-    }
-    if (key === "device") {
-      for (let i = 0; i < value.length; i++) {
-        let val = value[i];
-        let valLookup = deviceVals.find((item) => item.val === val) || {
-          text: "",
-        };
-        value[i] = valLookup.text;
-      }
-    }
-    return value;
-  };
-
-  const getHealthEventLabel = (key: string) => {
-    let value = data[key];
-    if (key === "healthEvent") {
-      let valLookup = optionsArr.find((item) => item.val === value) || {
-        text: "",
-      };
-      value = valLookup.text;
-    }
-    if (key === "outcome") {
-      let valLookup = outcomeChoices.find((item) => item.val === value) || {
-        text: "",
-      };
-      value = valLookup.text;
-    }
-    if (key === "eventTreatment" || key === "postEventTreatment") {
-      let valLookup = treatmentChoices.find((item) => item.val === value) || {
-        text: "",
-      };
-      value = valLookup.text;
+    if (displayedData) {
+        data = JSON.parse(displayedData);
+        delete data['participantId'];
+        delete data['surveyId'];
+        delete data['org'];
+        formType = data.formType;
+        delete data['formType'];
     }
 
-    if (key === "ongoingStatus") {
-      let valLookup = ongoingArr.find((item) => item.val === value) || {
-        text: "",
-      };
-      value = valLookup.text;
-    }
+    const displayData = getDisplayData(data, formType);
 
-    return value;
-  };
-
-  let displayData = keys.map(function (key: string) {
-    if (formType === "Clinical Visit") {
-      const label = doctorVisit.find((item) => item.label === key);
-      if (label) {
-        let keyValue = getClinicalVisitLabel(key);
-        return `${label.value}: ${keyValue}`;
-      }
-    }
-
-    if (formType === "Withdrawal") {
-      const label = withdrawl.find((item) => item.label === key);
-      if (label) {
-        let keyValue = data[key];
-        return `${label.value}: ${keyValue}`;
-      }
-    }
-
-    if (formType === "Health Event") {
-      const label = he.find((item) => item.label === key);
-      if (label) {
-        let keyValue = getHealthEventLabel(key);
-        return `${label.value}: ${keyValue}`;
-      }
-    }
-
-    let kv = data[key];
-    return `${key}: ${kv}`;
-  });
-
-  return displayData.map((elem: any, index: number) => {
     return (
-      <IonItem lines="none" key={index}>
-        {elem}
-      </IonItem>
+        <IonModal
+            isOpen={modalOpen}
+            presentingElement={router || undefined}
+            onDidDismiss={() => closeModal()}>
+            <IonHeader>
+                <IonToolbar>
+                    <IonTitle>
+                        <strong>{displayTitle + ' Details'}</strong>
+                    </IonTitle>
+                    <IonButtons slot='start'>
+                        <IonButton color='primary' type='button' onClick={() => closeModal()}>
+                            Cancel
+                        </IonButton>
+                    </IonButtons>
+                </IonToolbar>
+            </IonHeader>
+            <IonContent className='ion-padding'>
+                <div tabIndex={1}>
+                    {!isEmptyObject(displayData) &&
+                        displayData.map((elem: any, index: number) => {
+                            return (
+                                <IonItem lines='none' key={index}>
+                                    {elem}
+                                </IonItem>
+                            );
+                        })}
+                </div>
+            </IonContent>
+        </IonModal>
     );
-  });
 };

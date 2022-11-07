@@ -8,6 +8,8 @@ interface PassedProps {
   participant: Participant;
   isLoading: boolean;
   resetLookup: Function;
+  isEmpty: boolean;
+  org: string;
 }
 
 interface SecurityQuestionsContainerState {
@@ -20,12 +22,14 @@ class SecurityQuestionsContainer extends Component<
   SecurityQuestionsContainerState
 > {
   render = () => {
-    let { participant, isLoading, resetLookup } = this.props;
+    const { participant, isLoading, resetLookup, isEmpty, org} = this.props;
     return (
       <SecurityQuestions
         participant={participant}
         isLoading={isLoading}
         resetparticipantLookup={resetLookup}
+        isEmpty={isEmpty}
+        org={org}
       />
     );
   };
@@ -34,6 +38,8 @@ class SecurityQuestionsContainer extends Component<
 export const mapStateToProps = (state: any) => ({
   isLoading: state.loading,
   participant: state.participant,
+  isEmpty: state.firebase.auth.isEmpty,
+  org: state.selectedOrg,
 });
 
 export const mapDispatchToProps = (dispatch: any) => ({

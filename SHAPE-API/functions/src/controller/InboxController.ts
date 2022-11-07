@@ -109,7 +109,7 @@ export class InboxController {
             req.params.id,
             (error: boolean, data: any) => {
                if (error) {
-                  databaseError(error, res);
+                  databaseError(data, res);
                } else if (data.deletedCount !== 0) {
                   successResponse("delete inbox successful", null, res);
                }

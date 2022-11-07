@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import {
+  clearAuthError,
   isLoading,
   logout,
   register,
@@ -26,13 +27,14 @@ interface PassedProps {
   fireBaseAuth: FirebaseAuth;
   resetLookup: Function;
   authError: string | null;
+  resetAuthErrorState: Function;
 }
 
 interface RegisterContainerState {}
 
 class RegisterContainer extends Component<PassedProps, RegisterContainerState> {
   render() {
-    let {
+    const {
       participant,
       names,
       toggleLoading,
@@ -43,6 +45,7 @@ class RegisterContainer extends Component<PassedProps, RegisterContainerState> {
       fireBaseAuth,
       resetLookup,
       authError,
+      resetAuthErrorState,
     } = this.props;
 
     return (
@@ -57,6 +60,7 @@ class RegisterContainer extends Component<PassedProps, RegisterContainerState> {
         fireBaseAuth={fireBaseAuth}
         resetparticipantLookup={resetLookup}
         authError={authError}
+        clearAuthError={resetAuthErrorState}
       />
     );
   }
@@ -77,6 +81,9 @@ export const mapDispatchToProps = (dispatch: any) => ({
   },
   resetLookup() {
     dispatch(resetparticipantLookup());
+  },
+  resetAuthErrorState() {
+    dispatch(clearAuthError());
   },
   toggleLoading(loading: boolean) {
     dispatch(isLoading(loading));

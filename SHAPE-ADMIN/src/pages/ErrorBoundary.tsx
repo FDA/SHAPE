@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {IonButton, IonContent, IonPage, IonText} from '@ionic/react';
 import {connect} from 'react-redux';
-import {firebase} from '../config';
+import { addDoc, collection, getFirestore } from 'firebase/firestore';
 import {FirebaseAuth} from '../interfaces/DataTypes';
 import {collections, routes} from '../utils/Constants';
 
@@ -19,13 +19,12 @@ class ErrorBoundary extends Component<Props, State> {
         this.state = {hasError: false};
     }
 
-    componentDidCatch(error: any, info: any) {
+    async componentDidCatch(error: any, info: any) {
         // Display fallback UI
         this.setState({hasError: true});
-        const {fireBaseAuth} = this.props;
-        const {uid} = fireBaseAuth;
-
-        const fireStore = firebase.firestore();
+        const { uid } = this.props.fireBaseAuth;
+        const firestore = getFirestore();
+        const docRef = collection(firestore, collections.ERRORS)
         const docData = {
             uid: uid,
             errMessage: error.message,
@@ -33,12 +32,7 @@ class ErrorBoundary extends Component<Props, State> {
             info: info
         };
         try {
-            fireStore
-                .collection(collections.ERRORS)
-                .add(docData)
-                .catch((err) => {
-                    console.error(err);
-                });
+         await addDoc(docRef, docData);
         } catch (e) {
             console.error(`Error: ${e}`);
         }

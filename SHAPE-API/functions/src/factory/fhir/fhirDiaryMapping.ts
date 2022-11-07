@@ -1,32 +1,50 @@
 import { FHIRSurvey } from "./fhirSurveyElements";
-import { isEmptyObject } from "./utils";
-import * as moment from "moment";
+import { FHIRPatient } from "./fhirPatientElements";
+import { isEmptyObject, guid } from "./utils";
+import { format } from "date-fns";
 
 export function diaryToFhir(responses: any, survey: any) {
    const wrapper: any = getBundleResource();
    wrapper.entry.push(FHIRSurvey(survey));
+   const patients: any = [];
+
    for (const res in responses) {
       const response = responses[res];
       const type = response.formType;
+
+      let subject;
+      const patientsFiltered = patients.filter((elem: any) => elem.resource.identifier.value === response.profileId);
+      if (patientsFiltered.length === 0) {
+         subject = FHIRPatient(response.profileId, response.profileName, response.profileDOB);
+         patients.push(subject);
+         wrapper.entry.push(subject)
+      } else {
+         subject = patientsFiltered[0]
+      }
+
       switch (type) {
          case "Clinical Visit":
-            wrapper.entry.push(getClinicalVisitDiary(response));
+            wrapper.entry.push(getClinicalVisitDiary(response, subject.fullUrl));
             break;
          case "Withdrawal":
-            wrapper.entry.push(getWithdrawalDiary(response));
+            wrapper.entry.push(getWithdrawalDiary(response, subject.fullUrl));
             break;
          case "Health Event":
-            wrapper.entry.push(getHealthEventDiary(response));
+            wrapper.entry.push(getHealthEventDiary(response, subject.fullUrl));
             break;
       }
    }
    return wrapper;
 }
 
-function getClinicalVisitDiary(d: any) {
+function getClinicalVisitDiary(d: any, subject: string) {
    const diary = {
+      fullUrl: `QuestionnaireResponse/${guid()}`,
       resource: {
          resourceType: "QuestionnaireResponse",
+         subject: {
+            reference: subject
+         },
          meta: {
             profile: [
                "http://ibm.com/fhir/fda/shape/StructureDefinition/ClinicalVisitDiaryEntry",
@@ -62,7 +80,7 @@ function getClinicalVisitDiary(d: any) {
                linkId: "eventDate",
                answer: [
                   {
-                     valueDate: moment(d.eventDate).format("YYYY-MM-DD"),
+                     valueDate: format(new Date(d.eventDate), "yyyy-MM-dd"),
                   },
                ],
             },
@@ -130,15 +148,26 @@ function getClinicalVisitDiary(d: any) {
    });
 
    const assessorAnswer: any = [];
-   d.assessers.forEach((assesser: any) => {
+   if(typeof(d.assessers) === "object") {
+      d.assessers.forEach((assesser: any) => {
+         assessorAnswer.push({
+            valueCoding: {
+               code: assesser.toString(),
+               system:
+                  "http://ibm.com/fhir/fda/shape/CodeSystem/ClinicalVisitAssessersAnswer",
+            },
+         });
+      });
+   } else {
       assessorAnswer.push({
          valueCoding: {
-            code: assesser.toString(),
+            code: d.assessers.toString(),
             system:
                "http://ibm.com/fhir/fda/shape/CodeSystem/ClinicalVisitAssessersAnswer",
          },
       });
-   });
+   }
+   
 
    diary.resource.item.push({
       linkId: "assessers",
@@ -158,10 +187,14 @@ function getClinicalVisitDiary(d: any) {
    return diary;
 }
 
-function getWithdrawalDiary(d: any) {
+function getWithdrawalDiary(d: any, subject: string) {
    return {
+      fullUrl: `QuestionnaireResponse/${guid()}`,
       resource: {
          resourceType: "QuestionnaireResponse",
+         subject: {
+            reference: subject
+         },
          meta: {
             profile: [
                "http://ibm.com/fhir/fda/shape/StructureDefinition/WithdrawalDiaryEntry",
@@ -217,10 +250,14 @@ function getWithdrawalDiary(d: any) {
    };
 }
 
-function getHealthEventDiary(d: any) {
+function getHealthEventDiary(d: any, subject: string) {
    const diary = {
+      fullUrl: `QuestionnaireResponse/${guid()}`,
       resource: {
          resourceType: "QuestionnaireResponse",
+         subject: {
+            reference: subject
+         },
          meta: {
             profile: [
                "http://ibm.com/fhir/fda/shape/StructureDefinition/HealthEventDiaryEntry",
@@ -260,7 +297,7 @@ function getHealthEventDiary(d: any) {
                linkId: "onsetDate",
                answer: [
                   {
-                     valueDate: moment(d.onsetDate).format("YYYY-MM-DD"),
+                     valueDate: format(new Date(d.onsetDate), "yyyy-MM-dd"),
                   },
                ],
             },
@@ -340,7 +377,7 @@ function getHealthEventDiary(d: any) {
          linkId: "endDate",
          answer: [
             {
-               valueDate: moment(d.endDate).format("YYYY-MM-DD"),
+               valueDate: format(new Date(d.endDate), "yyyy-MM-dd"),
             },
          ],
       });

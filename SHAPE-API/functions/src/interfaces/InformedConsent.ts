@@ -4,5 +4,6 @@ export interface InformedConsent {
     participantId: string,
     emailSent: string,
     dateAgreed: string,
-    org?: string
+    org: string,
+    userId: string,
 }

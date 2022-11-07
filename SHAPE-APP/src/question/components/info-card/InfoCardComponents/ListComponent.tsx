@@ -11,8 +11,8 @@ interface PassedProps {
 
 class ListComponent extends React.Component<PassedProps, {}> {
   render() {
-    let { section } = this.props;
-    let choices = !isEmptyObject(section.choices) ? section.choices : [];
+    const { section } = this.props;
+    const choices = !isEmptyObject(section.choices) ? section.choices : [];
     return (
       <ul>
         {choices.map((choice: InfoCardListItem, index: number) => {

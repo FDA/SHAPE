@@ -17,12 +17,13 @@ import {
     checkUserExists,
     createAdminUser,
     setAdmin,
-    updateOrg
+    updateOrg,
+    getAllOrgs
 } from '../utils/API';
 import {RouteComponentProps, withRouter} from 'react-router-dom';
 import Loading from '../layout/Loading';
 import {routes} from '../utils/Constants';
-import {Organization} from '../interfaces/DataTypes';
+import {Organization, Org} from '../interfaces/DataTypes';
 
 interface Props extends RouteComponentProps {
     org: Organization;
@@ -37,6 +38,7 @@ interface State {
     active: boolean;
     mode: string;
     isLoading: boolean;
+    orgList: Array<Org>
 }
 
 class NewOrg extends Component<Props, State> {
@@ -50,7 +52,8 @@ class NewOrg extends Component<Props, State> {
             adminEmail: '',
             active: true,
             mode: 'add',
-            isLoading: false
+            isLoading: false,
+            orgList: []
         };
     }
 
@@ -65,34 +68,21 @@ class NewOrg extends Component<Props, State> {
     };
 
     makeUserAdmin = async (email: any, org: Organization) => {
-        const admin = await setAdmin(email, org.id);
-        const {data} = admin;
-        if (data) {
-            const {success} = data;
-            if (success) {
-                alert(`${org.contactName} has been made admin for ${org.name}`);
-            }
-        }
+        await setAdmin(email, org.id);
     };
 
     createAdmin = async (org: any) => {
         const createdAdmin = await createAdminUser(org);
         if (createdAdmin) {
-            const admin = await setAdmin(org.adminEmail, org.id);
-            const {data} = admin;
-            if (data) {
-                const {success} = data;
-                if (success) {
-                    alert(
-                        `An account has been created for ${org.contactName} and is now admin for ${org.name}.`
-                    );
-                }
-            }
+            await setAdmin(org.adminEmail, org.id);
+        } else {
+           console.error("error creating Admin user");
         }
     };
 
     createOrg = async (org: Organization) => {
-        const adminUser = await checkUserExists(org.adminEmail);
+        const adminUser= checkUserExists(org.adminEmail);
+        //@ts-ignore
         const {email} = adminUser;
         if (email) {
             this.makeUserAdmin(email, org);
@@ -109,7 +99,7 @@ class NewOrg extends Component<Props, State> {
 
     submit = async (e: any) => {
         this.setState({isLoading: true});
-        const {id, orgName, contactName, adminEmail, active, mode} = this.state;
+        const {id, orgName, contactName, adminEmail, active, mode, orgList} = this.state;
         const org = {
             id: id,
             name: orgName,
@@ -129,6 +119,12 @@ class NewOrg extends Component<Props, State> {
         ) {
             this.setState({isLoading: false});
             alert('All Fields are required!');
+        } else if(orgList.find(elem => elem.id.toLowerCase() === id.toLowerCase())) {
+            this.setState({isLoading: false});
+            alert('Org ID already in use.');
+        } else if(orgList.find(elem => elem.adminEmail.toLowerCase() === adminEmail.toLowerCase())) {
+            this.setState({isLoading: false});
+            alert('Admin email already in use.');
         } else {
             if (mode === 'add') {
                 this.createOrg(org);
@@ -143,6 +139,21 @@ class NewOrg extends Component<Props, State> {
         //@ts-ignore
         this.setState({
             [name]: value
+        });
+    }
+
+    componentDidMount(): void {
+        let orgs: Org[] = [];
+        this.setState({isLoading: true});
+        let parent = this;
+        getAllOrgs().then(function (snapshot: any) {
+            snapshot.forEach(function (doc: any) {
+                let org = doc.data();
+                if (org) {
+                    orgs.push(org);
+                }
+            });
+            parent.setState({orgList: orgs, isLoading: false});
         });
     }
 

@@ -1,56 +1,60 @@
-import React from "react";
-import { ColoredLine } from "./";
-import { Q13, ParticipantResponse } from "../../../interfaces/DataTypes";
+import React from 'react';
+import { Q13Card as Q13 } from '../../../interfaces/DataTypes';
 import {
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonLabel,
-} from "@ionic/react";
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonCardTitle,
+    IonFab,
+    IonFabButton,
+    IonIcon,
+    IonLabel
+} from '@ionic/react';
+import { profilesWithNoCompletedResponse } from '../../../utils/Utils';
+import { lockClosed } from 'ionicons/icons';
 
-export const Q13Card: React.FC<Q13> = (q13) => {
-  let { participantResponse } = q13;
-  let matchedResp = participantResponse.filter(
-    (res: ParticipantResponse) => res.questionnaireId === q13.id
-  );
-  let status = "Not Started";
-  let color = "#2A7CBA";
-  if (matchedResp && matchedResp.length > 0) {
-    let hasComplete = matchedResp.some(
-      (res: ParticipantResponse) => res.complete
-    );
-    status = hasComplete ? "Complete" : "In Progress";
-    color = hasComplete ? "#66B584" : "#F7987A";
-  }
+export const Q13Card: React.FC<Q13> = (props) => {
+    const {
+        id,
+        participantResponse,
+        href,
+        name,
+        shortDescription,
+        description,
+        numQuestions,
+        profile,
+        questionnaireView
+    } = props;
 
-  return (
-    <IonCard button={true} routerLink={q13.href}>
-      <IonCardHeader>
-        <IonCardTitle>{q13.name}</IonCardTitle>
-        <IonCardSubtitle>{q13.shortDescription}</IonCardSubtitle>
-      </IonCardHeader>
-      <IonCardContent>{q13.description}</IonCardContent>
-      <ColoredLine />
-      <IonCardContent style={{ fontFamily: "OpenSans" }}>
-        Status: <IonLabel>{status}</IonLabel>
-        <div
-          style={{
-            backgroundColor: `${color}`,
-            border: "1px solid black",
-            display: "inline",
-            paddingLeft: "1em",
-            paddingRight: "1em",
-            float: "right",
-          }}
-        >
-          &nbsp;
+    const numberTodo = profilesWithNoCompletedResponse(id, participantResponse, profile).length;
+
+    return (
+        <div>
+            {numberTodo > 0 && questionnaireView === 'todo' && (
+                <IonFab vertical='top' horizontal='end' slot='fixed'>
+                    <IonFabButton size='small' routerLink={href} color='danger'>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{numberTodo}</div>
+                    </IonFabButton>
+                </IonFab>
+            )}
+            {questionnaireView === 'complete' && (
+                <IonFab vertical='top' horizontal='end' slot='fixed'>
+                    <IonFabButton size='small' routerLink={href} color='none'>
+                        <IonIcon icon={lockClosed} aria-label={'locked icon'} />
+                    </IonFabButton>
+                </IonFab>
+            )}
+            <IonCard button routerLink={href}>
+                <IonCardHeader>
+                    <IonCardTitle>{name}</IonCardTitle>
+                    <IonCardSubtitle>{shortDescription}</IonCardSubtitle>
+                </IonCardHeader>
+                <IonCardContent>{description}</IonCardContent>
+                <IonCardContent style={{ fontFamily: 'OpenSans' }}>
+                    Questions: <IonLabel>{numQuestions}</IonLabel>
+                </IonCardContent>
+            </IonCard>
         </div>
-        <br />
-        Questions: <IonLabel>{q13.numQuestions}</IonLabel>
-        <br />
-      </IonCardContent>
-    </IonCard>
-  );
+    );
 };

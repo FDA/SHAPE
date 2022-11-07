@@ -6,7 +6,7 @@ import {
 } from "../../../../redux/actions/Participant";
 import {
   User,
-  Message as MessageType,
+  Inbox,
   FirebaseAuth,
 } from "../../../../interfaces/DataTypes";
 import Message from "../Message";
@@ -14,21 +14,25 @@ import Message from "../Message";
 interface PassedProps {
   profile: User;
   participantInboxDispatch: Function;
-  message: MessageType;
+  message: Inbox;
   deleteMessageDispatch: Function;
   closeMessage: Function;
   fireBaseAuth: FirebaseAuth;
+  showMessage: boolean;
+  router: HTMLElement;
 }
 
 class MessageContainer extends Component<PassedProps, {}> {
   render() {
-    let {
+    const {
       message,
       fireBaseAuth,
       closeMessage,
       profile,
       participantInboxDispatch,
       deleteMessageDispatch,
+      showMessage,
+      router
     } = this.props;
 
     return (
@@ -39,6 +43,8 @@ class MessageContainer extends Component<PassedProps, {}> {
         deleteMessage={deleteMessageDispatch}
         closeMessage={closeMessage}
         fireBaseAuth={fireBaseAuth}
+        showMessage={showMessage}
+        router={router}
       />
     );
   }
@@ -50,11 +56,11 @@ const mapStateToProps = (state: any) => ({
 });
 
 const mapDispatchToProps = (dispatch: any) => ({
-  participantInboxDispatch(participantId: string, org: string) {
-    dispatch(participantInbox(participantId, org));
+  participantInboxDispatch() {
+    dispatch(participantInbox());
   },
-  deleteMessageDispatch(participantId: string, messageId: string, org: string) {
-    dispatch(deleteMessage(participantId, messageId, org));
+  deleteMessageDispatch(messageId: string) {
+    dispatch(deleteMessage(messageId));
   },
 });
 
